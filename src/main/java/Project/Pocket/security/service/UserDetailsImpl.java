@@ -34,7 +34,7 @@ public class UserDetailsImpl  implements UserDetails {
 
     @Override
     public String getPassword() {
-        return null;
+        return user.getPassword();
     }
 
     @Override
@@ -44,26 +44,29 @@ public class UserDetailsImpl  implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean isEnabled() {
-        return false;
+        return true;
     }
 
     public User getUser(){
 
         return user;
+    }
+    public void setUser(User user){
+        this.user = user;
     }
 }

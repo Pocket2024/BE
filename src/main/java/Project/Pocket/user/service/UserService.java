@@ -19,19 +19,24 @@ import Project.Pocket.user.entity.UserRoleEnum;
 import Project.Pocket.user.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 
+
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 
 import javax.transaction.Transactional;
 import java.util.Optional;
+
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +48,9 @@ public class UserService {
 
     private final JwtProvider jwtProvider;
     private final RedisDao redisDao;
+
+
+
 
 
     /**
@@ -139,10 +147,23 @@ public class UserService {
         if(request.getProfileImage() != null){
             user.setProfileImage(request.getProfileImage());
         }
-        
-
-        //수정된 정보 저장
+         //수정된 정보 저장
         userRepository.save(user);
+
+        User updatedUser = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+        updateSecurityContext(updatedUser);
+    }
+    private void updateSecurityContext(User updatedUser){
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            userDetails.setUser(updatedUser);
+
+        UsernamePasswordAuthenticationToken newAuth = new UsernamePasswordAuthenticationToken(
+                userDetails,
+                authentication.getCredentials(),
+                authentication.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(newAuth);
+
     }
     public User getUserById(Long userId) {
         return userRepository.findById(userId)

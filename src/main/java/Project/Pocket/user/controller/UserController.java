@@ -111,8 +111,9 @@ public class UserController {
         if (currentUser == null) {
             return null;
         }
-        //현재 로그인한 사용자의 회원가입 정보 반환
-        return currentUser;
+        // 데이터베이스에서 사용자 정보를 다시 조회하여 반환
+        User userDetails = userService.getUserById(currentUser.getId());
+        return ResponseEntity.ok(userDetails).getBody();
 
     }
 
@@ -127,7 +128,9 @@ public class UserController {
 
         try {
             userService.updateUser(userId, request);
-            return ResponseEntity.ok().build();
+            //업데이트된 사용자 정보를 다시 가져와 반환
+            User updatedUser = userService.getUserById(userId);
+            return ResponseEntity.ok(updatedUser);
         } catch (UserNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
