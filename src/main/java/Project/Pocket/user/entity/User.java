@@ -2,6 +2,7 @@ package Project.Pocket.user.entity;
 
 
 import Project.Pocket.follow.entity.Follow;
+import Project.Pocket.user.dto.UserDto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 
@@ -15,7 +16,7 @@ import java.util.List;
 @JsonIgnoreProperties
 @Table(name = "USERS", indexes = @Index(name = "idx_users_id", columnList ="id" ))
 @Getter
-//@Setter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User implements Serializable {
 
@@ -68,77 +69,84 @@ public class User implements Serializable {
     }
 
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getNickname() {
-        return nickname;
-    }
-
-    public void setNickname(String nickname) {
-        this.nickname = nickname;
-    }
-
-//    public String getAddress() {
-//        return address;
+//    public Long getId() {
+//        return id;
 //    }
 //
-//    public void setAddress(String address) {
-//        this.address = address;
+//    public void setId(Long id) {
+//        this.id = id;
+//    }
+//
+//    public String getEmail() {
+//        return email;
+//    }
+//
+//    public void setEmail(String email) {
+//        this.email = email;
+//    }
+//
+//    public String getNickname() {
+//        return nickname;
+//    }
+//
+//    public void setNickname(String nickname) {
+//        this.nickname = nickname;
+//    }
+//
+////    public String getAddress() {
+////        return address;
+////    }
+////
+////    public void setAddress(String address) {
+////        this.address = address;
+////    }
+//
+//    public String getPhoneNumber() {
+//        return phoneNumber;
+//    }
+//
+//    public void setPhoneNumber(String phoneNumber) {
+//        this.phoneNumber = phoneNumber;
+//    }
+//
+//    public String getPassword() {
+//        return password;
+//    }
+//
+//    public void setPassword(String password) {
+//        this.password = password;
+//    }
+//
+//    public String getBio() {
+//        return bio;
+//    }
+//
+//    public void setBio(String bio) {
+//        this.bio = bio;
+//    }
+//
+//    public String getProfileImage() {
+//        return profileImage;
+//    }
+//
+//    public void setProfileImage(String profileImage) {
+//        this.profileImage = profileImage;
+//    }
+//
+//    public UserRoleEnum getRole() {
+//        return role;
+//    }
+//
+//    public void setRole(UserRoleEnum role) {
+//        this.role = role;
 //    }
 
-    public String getPhoneNumber() {
-        return phoneNumber;
+    public UserDto toDto() {
+        UserDto userDto = new UserDto();
+        userDto.setId(this.id);
+        userDto.setNickname(this.nickname);
+        userDto.setProfileImage(this.profileImage);
+        return userDto;
     }
-
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getBio() {
-        return bio;
-    }
-
-    public void setBio(String bio) {
-        this.bio = bio;
-    }
-
-    public String getProfileImage() {
-        return profileImage;
-    }
-
-    public void setProfileImage(String profileImage) {
-        this.profileImage = profileImage;
-    }
-
-    public UserRoleEnum getRole() {
-        return role;
-    }
-
-    public void setRole(UserRoleEnum role) {
-        this.role = role;
-    }
-
 
 }
