@@ -1,35 +1,48 @@
 package Project.Pocket.Review.controller;
 
+import Project.Pocket.Image.entity.ImageDto;
+import Project.Pocket.Image.service.ImageService;
+import Project.Pocket.Like.service.LikeService;
 import Project.Pocket.Review.dto.ReviewDto;
 import Project.Pocket.Review.dto.ReviewRequest;
 import Project.Pocket.Review.entity.Review;
 import Project.Pocket.Review.service.ReviewService;
+import Project.Pocket.TicketCategory.dto.TicketCategoryDto;
+import Project.Pocket.TicketCategory.service.TicketCategoryService;
 import Project.Pocket.user.dto.UserDto;
 import Project.Pocket.user.entity.User;
+import Project.Pocket.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/reviews")
+@RequestMapping("/api/reviews")
 public class ReviewController {
     private final ReviewService reviewService;
+    private final TicketCategoryService ticketCategoryService;
+    private final ImageService imageService;
+    private final LikeService likeService;
 
     @Autowired
-    public ReviewController(ReviewService reviewService){
+    public ReviewController(ReviewService reviewService, TicketCategoryService ticketCategoryService,ImageService imageService, LikeService likeService) {
         this.reviewService = reviewService;
+        this.ticketCategoryService = ticketCategoryService;
+        this.imageService = imageService;
+        this.likeService = likeService;
 
     }
 
-    @PostMapping("/{categoryId}")
-    public ResponseEntity<ReviewDto> createReview(@PathVariable Long categoryId, @RequestParam Long userId, @RequestBody ReviewRequest reviewRequest){
-        Review review = reviewService.createReview(categoryId, reviewRequest.getContent(),reviewRequest.getImageUrls(),userId);
-        ReviewDto reviewDto = review.toDto();
-        return ResponseEntity.status(HttpStatus.CREATED).body(reviewDto);
+    @PostMapping
+    public ResponseEntity<String> createReview(@RequestBody ReviewRequest reviewRequest) {
+
+        Review review = reviewService.createReview(reviewRequest);
+        return ResponseEntity.ok("Review created successfully");
     }
 
     @GetMapping("/{reviewId}/likes")
@@ -46,6 +59,10 @@ public class ReviewController {
                 .collect(Collectors.toList());
         return ResponseEntity.ok(likedUsers);
     }
-
+    @GetMapping("/{reviewId}")
+    public ResponseEntity<ReviewDto> getReview(@PathVariable Long reviewId, @RequestParam Long userId){
+        ReviewDto reviewDto = reviewService.getReviewDto(reviewId, userId);
+        return ResponseEntity.ok(reviewDto);
+    }
 
 }

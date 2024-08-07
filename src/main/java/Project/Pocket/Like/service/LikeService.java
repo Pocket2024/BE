@@ -32,7 +32,7 @@ public class LikeService {
         if(user == null){
             throw new IllegalArgumentException("User with id "  + userId + " not found!");
         }
-        if(likeRepository.existsByReviewAndUser(review, user)){
+        if(likeRepository.existsByReviewIdAndUserId(reviewId, userId)){
             throw new IllegalArgumentException("User with id " + userId + " already liked this review!");
         }
 
@@ -41,5 +41,9 @@ public class LikeService {
         like.setUser(user);
         likeRepository.save(like);
 
+    }
+
+    public  boolean isReviewLikedByUser(Long reviewId, Long userId){
+        return likeRepository.existsByReviewIdAndUserId(reviewId, userId);
     }
 }

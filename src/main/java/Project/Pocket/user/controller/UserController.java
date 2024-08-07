@@ -4,10 +4,7 @@ import Project.Pocket.security.dto.ReissueTokenRequest;
 import Project.Pocket.security.dto.TokenResponse;
 import Project.Pocket.security.jwt.JwtProvider;
 import Project.Pocket.security.service.UserDetailsImpl;
-import Project.Pocket.user.dto.LoginRequest;
-import Project.Pocket.user.dto.SignUpRequest;
-import Project.Pocket.user.dto.UserResponse;
-import Project.Pocket.user.dto.UserUpdateRequest;
+import Project.Pocket.user.dto.*;
 import Project.Pocket.user.entity.User;
 import Project.Pocket.user.exception.UserNotFoundException;
 import Project.Pocket.user.service.UserService;
@@ -16,11 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,12 +30,7 @@ public class UserController {
     private final UserService userService;
     private final JwtProvider jwtProvider;
 
-    /**
-     * 회원가입
-     *
-     * @param signUpRequest
-     * @return 회원가입 성공
-     */
+
     @PostMapping("/signup")
     public ResponseEntity signup(@RequestBody @Validated SignUpRequest signUpRequest) {
         //패스워드 1과 패스워드 2 가 동일 한지 체크
@@ -105,34 +99,35 @@ public class UserController {
     }
 
     @GetMapping("/details")
-    public User getUserDetails() {
+    public ResponseEntity<UserDto> getUserDetails() {
         User currentUser = userService.getCurrentUser();
         //현재 로그인한 사용자의 정보가 없을 경우
         if (currentUser == null) {
-            return null;
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
-        // 데이터베이스에서 사용자 정보를 다시 조회하여 반환
-        User userDetails = userService.getUserById(currentUser.getId());
-        return ResponseEntity.ok(userDetails).getBody();
+        //사용자 정보 조회 후 UserDTO 반환
+        UserDto userDetails = userService.getUserDetails(currentUser.getId());
+        return ResponseEntity.ok(userDetails);
 
     }
 
     @PutMapping("/{userId}")
-    public ResponseEntity<?> updateUser(@PathVariable Long userId, @RequestBody UserUpdateRequest request) {
+    public ResponseEntity<?> updateUser(@PathVariable Long userId, @ModelAttribute UserUpdateRequest request) {
         User currentUser = userService.getCurrentUser();
 
         // 현재 로그인한 사용자의 권한을 확인하고 수정하려는 사용자 정보의 소유자인지 검증할 수 있습니다.
         if (currentUser == null || !currentUser.getId().equals(userId)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
         try {
             userService.updateUser(userId, request);
-            //업데이트된 사용자 정보를 다시 가져와 반환
-            User updatedUser = userService.getUserById(userId);
-            return ResponseEntity.ok(updatedUser);
+            return ResponseEntity.ok("User information updated successfully");
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating user information");
         } catch (UserNotFoundException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+
+
         }
     }
 }

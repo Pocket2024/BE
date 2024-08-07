@@ -17,6 +17,9 @@ configurations {
 	}
 }
 
+
+
+
 repositories {
 	mavenCentral()
 }
@@ -36,6 +39,11 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	implementation "org.springframework.security:spring-security-config:5.6.0"
+//	implementation 'com.fasterxml.jackson.core:jackson-core'
+//	implementation 'com.fasterxml.jackson.core:jackson-databind'
+//	implementation 'com.fasterxml.jackson.core:jackson-annotations'
+//	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
 //	implementation 'io.jsonwebtoken:jjwt:0.9.1'
 	//jwt
 	compileOnly group: 'io.jsonwebtoken', name: 'jjwt-api', version: '0.11.2'

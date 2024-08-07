@@ -7,11 +7,8 @@ import Project.Pocket.security.exception.CustomException;
 import Project.Pocket.security.exception.ExceptionStatus;
 import Project.Pocket.security.jwt.JwtProvider;
 import Project.Pocket.security.service.UserDetailsImpl;
-import Project.Pocket.user.dto.LoginRequest;
-import Project.Pocket.user.dto.SignUpRequest;
-import Project.Pocket.user.dto.UserResponse;
+import Project.Pocket.user.dto.*;
 //import Project.Pocket.user.dto.UserUpdateRequest;
-import Project.Pocket.user.dto.UserUpdateRequest;
 import Project.Pocket.user.entity.User;
 import Project.Pocket.user.entity.UserRepository;
 import Project.Pocket.user.entity.UserRoleEnum;
@@ -22,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
@@ -32,9 +30,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 
 
 import javax.transaction.Transactional;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 
 
@@ -45,22 +51,20 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-
     private final JwtProvider jwtProvider;
     private final RedisDao redisDao;
+    @Value("${profile.images.dir}")
+    private String profileImagesDir;
+    @Value("${default.profile.image}")
+    private String defaultProfileImage;
 
 
 
 
 
-    /**
-     * 회원가입
-     *
-     * @param signUpRequest
-     * @return
-     */
+
     @Transactional
-    public ResponseEntity signup(@Validated SignUpRequest signUpRequest) {
+    public ResponseEntity signup(@Validated  SignUpRequest signUpRequest) {
         String email = signUpRequest.getEmail();
         String nickname = signUpRequest.getNickName();
         String password = passwordEncoder.encode(signUpRequest.getPassword());
@@ -76,13 +80,9 @@ public class UserService {
         if (findEmail.isPresent()) {
             throw new CustomException(ExceptionStatus.DUPLICATED_EMAIL);
         }
-
-
-
         UserRoleEnum role = UserRoleEnum.MEMBER;
         User user = signUpRequest.toEntity(role, password);
-
-        user.setProfileImage("default.png");
+        user.setProfileImage(defaultProfileImage);
 
         userRepository.save(user);
         return ResponseEntity.ok("회원가입 성공");
@@ -129,8 +129,22 @@ public class UserService {
 
     }
 
+    //파일 저장 메서드
+    public String saveProfileImage(MultipartFile file) throws IOException{
+        if(file.isEmpty()){
+            throw new IllegalArgumentException("Cannot upload an empty file");
+        }
+        //파일 이름과 경로 설정
+        String fileName = file.getOriginalFilename();
+        Path filePath = Paths.get(profileImagesDir, fileName);
+
+        //파일 저장
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+        return fileName;
+    }
+
 //    //회원 정보 수정
-    public void updateUser(Long userId, UserUpdateRequest request) throws UserNotFoundException {
+    public void updateUser(Long userId, UserUpdateRequest request) throws UserNotFoundException,IOException {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found with id "+ userId));
 
 
@@ -144,14 +158,15 @@ public class UserService {
         if(request.getPhoneNumber() != null){
             user.setPhoneNumber(request.getPhoneNumber());
         }
-        if(request.getProfileImage() != null){
-            user.setProfileImage(request.getProfileImage());
-        }
-         //수정된 정보 저장
+        if (request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
+            String profileImagePath = saveProfileImage(request.getProfileImage());
+            user.setProfileImage(profileImagePath);
+     }
+        //수정된 정보 저장
         userRepository.save(user);
 
-        User updatedUser = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-        updateSecurityContext(updatedUser);
+        //User updatedUser = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+        updateSecurityContext(user);
     }
     private void updateSecurityContext(User updatedUser){
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -168,5 +183,9 @@ public class UserService {
     public User getUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+    }
+    public UserDto getUserDetails(Long userId){
+        User user = getUserById(userId);
+        return user.toDto();
     }
 }

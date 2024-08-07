@@ -3,14 +3,12 @@ package Project.Pocket.user.dto;
 
 import Project.Pocket.user.entity.User;
 import Project.Pocket.user.entity.UserRoleEnum;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-
+import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
 
 
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED, force = true)
 public class SignUpRequest {
 
@@ -28,6 +26,7 @@ public class SignUpRequest {
 
         private final String bio;
         private final String phoneNumber;
+        private MultipartFile profileImage;
 
 
 
@@ -35,18 +34,7 @@ public class SignUpRequest {
 
 
 
-        @Builder
-        public SignUpRequest(String email, String nickName, String password, String password2,
-                             String bio, String phoneNumber, String address) {
-            this.email = email;
-            this.nickName = nickName;
-            this.password = password;
-            this.password2 = password2;
-            this.bio = bio;
-            this.phoneNumber = phoneNumber;
 
-
-        }
 
         /**
          * DTO -> Entity
