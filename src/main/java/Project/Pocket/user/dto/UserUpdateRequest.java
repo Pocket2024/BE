@@ -9,7 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserUpdateRequest {
 
     private String email;
-    private String nickname;
+    private String nickName;
     private String phoneNumber;
     private String bio;
     private MultipartFile profileImage;

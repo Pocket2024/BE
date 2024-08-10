@@ -7,6 +7,7 @@ import Project.Pocket.Review.entity.ReviewRepository;
 import Project.Pocket.user.entity.User;
 import Project.Pocket.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +19,7 @@ public class LikeService {
     private final UserService userService;
 
     @Autowired
-    public LikeService(LikeRepository likeRepository, ReviewRepository reviewRepository, UserService userService){
+    public LikeService(LikeRepository likeRepository, ReviewRepository reviewRepository, @Lazy UserService userService){
         this.likeRepository = likeRepository;
         this.reviewRepository = reviewRepository;
         this.userService = userService;

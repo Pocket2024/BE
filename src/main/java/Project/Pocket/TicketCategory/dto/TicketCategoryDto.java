@@ -12,7 +12,7 @@ public class TicketCategoryDto {
     private Long id;
     private String category;
     private String color;
-   // private List<ReviewDto> reviews;
+
 
 
 

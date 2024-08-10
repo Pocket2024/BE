@@ -112,7 +112,7 @@ public class UserController {
     }
 
     @PutMapping("/{userId}")
-    public ResponseEntity<?> updateUser(@PathVariable Long userId, @ModelAttribute UserUpdateRequest request) {
+    public ResponseEntity<UserDto> updateUser(@PathVariable Long userId, @ModelAttribute UserUpdateRequest request) {
         User currentUser = userService.getCurrentUser();
 
         // 현재 로그인한 사용자의 권한을 확인하고 수정하려는 사용자 정보의 소유자인지 검증할 수 있습니다.
@@ -120,12 +120,12 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         try {
-            userService.updateUser(userId, request);
-            return ResponseEntity.ok("User information updated successfully");
+            UserDto updatedUserDto  = userService.updateUser(userId,request);
+            return ResponseEntity.ok(updatedUserDto);
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating user information");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         } catch (UserNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 
 
         }

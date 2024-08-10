@@ -1,6 +1,12 @@
 package Project.Pocket.user.service;
 
 
+import Project.Pocket.Review.dto.ReviewDto;
+import Project.Pocket.Review.entity.ReviewRepository;
+import Project.Pocket.Review.service.ReviewService;
+import Project.Pocket.TicketCategory.entity.TicketCategory;
+import Project.Pocket.TicketCategory.entity.TicketCategoryRepository;
+import Project.Pocket.follow.entity.FollowRepository;
 import Project.Pocket.redis.CacheNames;
 import Project.Pocket.redis.RedisDao;
 import Project.Pocket.security.exception.CustomException;
@@ -53,10 +59,14 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final RedisDao redisDao;
+    private final FollowRepository followRepository;
     @Value("${profile.images.dir}")
     private String profileImagesDir;
     @Value("${default.profile.image}")
     private String defaultProfileImage;
+    private final TicketCategoryRepository ticketCategoryRepository;
+    private final ReviewRepository reviewRepository;
+    private final ReviewService reviewService;
 
 
 
@@ -85,7 +95,8 @@ public class UserService {
         user.setProfileImage(defaultProfileImage);
 
         userRepository.save(user);
-        return ResponseEntity.ok("회원가입 성공");
+        UserDto userDto = user.toDto();
+        return ResponseEntity.ok(userDto);
     }
 
     /**
@@ -144,12 +155,12 @@ public class UserService {
     }
 
 //    //회원 정보 수정
-    public void updateUser(Long userId, UserUpdateRequest request) throws UserNotFoundException,IOException {
+    public UserDto updateUser(Long userId, UserUpdateRequest request) throws UserNotFoundException,IOException {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found with id "+ userId));
 
 
-        if (request.getNickname() != null) {
-            user.setNickname(request.getNickname());
+        if (request.getNickName() != null) {
+            user.setNickname(request.getNickName());
         }
         if (request.getEmail() != null) {
             user.setEmail(request.getEmail());
@@ -165,8 +176,8 @@ public class UserService {
         //수정된 정보 저장
         userRepository.save(user);
 
-        //User updatedUser = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
         updateSecurityContext(user);
+        return user.toDto();
     }
     private void updateSecurityContext(User updatedUser){
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -186,6 +197,26 @@ public class UserService {
     }
     public UserDto getUserDetails(Long userId){
         User user = getUserById(userId);
-        return user.toDto();
+        UserDto userDto = user.toDto();
+        //팔로워 + 팔로잉 수 추가 설정
+        int followersCount = followRepository.countByFollowingId(user.getId());
+        int followingsCount = followRepository.countByFollowerId(user.getId());
+        userDto.setFollowersCount(followersCount);
+        userDto.setFollowingsCount(followingsCount);
+        //티켓 카테고리(Pocket) 수 추가
+        int ticketCategoryCount = ticketCategoryRepository.countByUserId(user.getId());
+        userDto.setTicketCategoryCount(ticketCategoryCount);
+        //리뷰(Ticket) 수 추가
+        int reviewCount = reviewRepository.countByUserId(user.getId());
+        userDto.setReviewCount(reviewCount);
+        //대표 리뷰(Ticket) 설정
+        reviewRepository.findByUserIdAndIsFeaturedTrue(userId).ifPresent(featuredReview -> {
+            Long featuredReviewId = featuredReview.getId();
+            userDto.setFeaturedReviewId(featuredReviewId);
+        });
+
+
+        return userDto;
+
     }
 }

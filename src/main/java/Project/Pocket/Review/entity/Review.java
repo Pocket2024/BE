@@ -50,6 +50,8 @@ public class Review {
     @Column(nullable = false)
     private String content;
 
+    private boolean isFeatured;
+
     @CreatedDate
     private LocalDateTime createdAt;
 

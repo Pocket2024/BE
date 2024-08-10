@@ -15,10 +15,20 @@ import Project.Pocket.TicketCategory.service.TicketCategoryService;
 import Project.Pocket.user.entity.User;
 import Project.Pocket.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,14 +38,23 @@ public class ReviewService {
     private final ImageRepository imageRepository;
     private final UserService userService;
     private final LikeRepository likeRepository;
+    @Value("${review.images.dir}")
+    private String reviewImageDir;
 
     @Autowired
-    public ReviewService(TicketCategoryService ticketCategoryService, ReviewRepository reviewRepository, ImageRepository imageRepository, UserService userService, LikeRepository likeRepository){
+    public ReviewService(@Lazy TicketCategoryService ticketCategoryService, ReviewRepository reviewRepository, ImageRepository imageRepository, @Lazy UserService userService, LikeRepository likeRepository){
         this.ticketCategoryService = ticketCategoryService;
         this.reviewRepository = reviewRepository;
         this.imageRepository = imageRepository;
         this.userService = userService;
         this.likeRepository = likeRepository;
+    }
+
+    private String saveImage(MultipartFile imageFile) throws IOException{
+        String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
+        Path imagePath = Paths.get(reviewImageDir,fileName);
+        Files.copy(imageFile.getInputStream(), imagePath, StandardCopyOption.REPLACE_EXISTING);
+        return "/review-images/" + fileName;
     }
 
     @Transactional
@@ -59,12 +78,19 @@ public class ReviewService {
         review.setTitle(reviewRequest.getTitle());
         review.setSeat(reviewRequest.getSeat());
         review.setUser(user);
-        List<Image> images = reviewRequest.getImageUrls().stream().map(url -> {
-            Image image = new Image();
-            image.setReview(review);
-            image.setUrl(url);
-            return image;
+        //이미지 파일들 저장 + 그 url을 리스트로 반환
+        List<Image> images = reviewRequest.getImages().stream().map(file -> {
+            try{
+                String imageUrl = saveImage(file);
+                Image image = new Image();
+                image.setReview(review);
+                image.setUrl(imageUrl);
+                return image;
+            }catch(IOException e){
+                throw new RuntimeException("Failed to save Image",e);
+            }
         }).collect(Collectors.toList());
+
         review.setImages(images);
         return reviewRepository.save(review);
     }
@@ -96,6 +122,8 @@ public class ReviewService {
         reviewDto.setLocation(review.getLocation());
         return reviewDto;
    }
+
+
    public ReviewDto getReviewDto(Long reviewId, Long userId){
         Review review = reviewRepository.findById(reviewId).orElseThrow(() -> new IllegalArgumentException("Review not found"));
         //TicketCategory -> DTO
@@ -110,7 +138,18 @@ public class ReviewService {
         return mapToDto(review, ticketCategoryDto, imageDtos, likedByCurrentUser);
    }
 
+    public void setFeaturedReview(Long userId, Long reviewId){
+        //대표 리뷰가 이미 있다면 해제
+        reviewRepository.findByUserIdAndIsFeaturedTrue(userId).ifPresent(existingFeaturedReview -> {
+            existingFeaturedReview.setFeatured(false);
+            reviewRepository.save(existingFeaturedReview);
+        });
 
+        //새로운 리뷰 대표리뷰 설정
+        Review review = reviewRepository.findById(reviewId).orElseThrow(() -> new IllegalArgumentException("Review not found"));
+        review.setFeatured(true);
+        reviewRepository.save(review);
+    }
 
 
 

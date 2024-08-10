@@ -70,7 +70,7 @@ public class User implements Serializable {
     public UserDto toDto() {
         UserDto userDto = new UserDto();
         userDto.setId(this.id);
-        userDto.setNickname(this.nickname);
+        userDto.setNickName(this.nickname);
         //프로필 이미지 url 설정
         String profileImageUrl = "/profile-images/" + this.profileImage;
         userDto.setProfileImageUrl(profileImageUrl);

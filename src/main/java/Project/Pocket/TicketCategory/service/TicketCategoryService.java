@@ -1,14 +1,14 @@
 package Project.Pocket.TicketCategory.service;
 
-import Project.Pocket.Review.dto.ReviewDto;
-import Project.Pocket.Review.service.ReviewService;
 import Project.Pocket.TicketCategory.dto.TicketCategoryDto;
 import Project.Pocket.TicketCategory.dto.TicketCategoryRequest;
+import Project.Pocket.TicketCategory.dto.TicketCategoryResponse;
 import Project.Pocket.TicketCategory.entity.TicketCategory;
 import Project.Pocket.TicketCategory.entity.TicketCategoryRepository;
 import Project.Pocket.user.entity.User;
 import Project.Pocket.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,7 +20,7 @@ public class TicketCategoryService {
     private final UserService userService;
 
     @Autowired
-    public TicketCategoryService(TicketCategoryRepository ticketCategoryRepository, UserService userService){
+    public TicketCategoryService(TicketCategoryRepository ticketCategoryRepository, @Lazy UserService userService){
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.userService = userService;
     }
@@ -47,6 +47,24 @@ public class TicketCategoryService {
         return mapToDto(ticketCategory);
 
     }
+    public TicketCategoryResponse getTicketCategoryByUser(User user){
+        List<TicketCategory> categories = ticketCategoryRepository.findByUser(user);
+        int totalCategories = categories.size();
+
+        // 카테고리 리스트 --> DTO
+        List<TicketCategoryDto> dtoList = categories.stream()
+                .map(category -> mapToDto(category))
+                .collect(Collectors.toList());
+
+        //응답 객체 생성
+        TicketCategoryResponse ticketCategoryResponse = new TicketCategoryResponse();
+        ticketCategoryResponse.setCategories(dtoList);
+        ticketCategoryResponse.setTotalCategories(totalCategories);
+
+        return ticketCategoryResponse;
+
+
+    }
     public TicketCategory getTicketCategoryById(Long categoryId){
         return ticketCategoryRepository.findById(categoryId).orElseThrow(() -> new RuntimeException("Category not found"));
     }
@@ -56,10 +74,10 @@ public class TicketCategoryService {
         dto.setId(ticketCategory.getId());
         dto.setCategory(ticketCategory.getCategory());
         dto.setColor(ticketCategory.getColor());
-
         return  dto;
 
     }
+
 
 
 }
