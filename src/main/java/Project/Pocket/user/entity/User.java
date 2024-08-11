@@ -71,9 +71,7 @@ public class User implements Serializable {
         UserDto userDto = new UserDto();
         userDto.setId(this.id);
         userDto.setNickName(this.nickname);
-        //프로필 이미지 url 설정
-        String profileImageUrl = "/profile-images/" + this.profileImage;
-        userDto.setProfileImageUrl(profileImageUrl);
+        userDto.setProfileImageUrl(this.profileImage);
         userDto.setBio(this.bio);
         return userDto;
     }

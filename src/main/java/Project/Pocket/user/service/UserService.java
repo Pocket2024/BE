@@ -60,10 +60,6 @@ public class UserService {
     private final JwtProvider jwtProvider;
     private final RedisDao redisDao;
     private final FollowRepository followRepository;
-    @Value("${profile.images.dir}")
-    private String profileImagesDir;
-    @Value("${default.profile.image}")
-    private String defaultProfileImage;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final ReviewRepository reviewRepository;
     private final ReviewService reviewService;
@@ -92,10 +88,17 @@ public class UserService {
         }
         UserRoleEnum role = UserRoleEnum.MEMBER;
         User user = signUpRequest.toEntity(role, password);
+        String defaultProfileImage = "http://localhost:8080/images/default.png";
         user.setProfileImage(defaultProfileImage);
 
         userRepository.save(user);
+        // User 객체의 프로필 이미지 URL 확인
+        System.out.println("Profile Image URL in User entity: " + user.getProfileImage());
+
         UserDto userDto = user.toDto();
+        // DTO에서 프로필 이미지 URL 확인
+        System.out.println("Profile Image URL in UserDto: " + userDto.getProfileImageUrl());
+
         return ResponseEntity.ok(userDto);
     }
 
@@ -147,11 +150,12 @@ public class UserService {
         }
         //파일 이름과 경로 설정
         String fileName = file.getOriginalFilename();
-        Path filePath = Paths.get(profileImagesDir, fileName);
+        Path filePath = Paths.get("src/main/resources/static/images", fileName);
 
         //파일 저장
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-        return fileName;
+        String baseUrl = "http://localhost:8080";
+        return baseUrl + "/images/" + fileName;
     }
 
 //    //회원 정보 수정
@@ -175,7 +179,6 @@ public class UserService {
      }
         //수정된 정보 저장
         userRepository.save(user);
-
         updateSecurityContext(user);
         return user.toDto();
     }

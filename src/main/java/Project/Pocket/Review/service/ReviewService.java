@@ -38,8 +38,7 @@ public class ReviewService {
     private final ImageRepository imageRepository;
     private final UserService userService;
     private final LikeRepository likeRepository;
-    @Value("${review.images.dir}")
-    private String reviewImageDir;
+
 
     @Autowired
     public ReviewService(@Lazy TicketCategoryService ticketCategoryService, ReviewRepository reviewRepository, ImageRepository imageRepository, @Lazy UserService userService, LikeRepository likeRepository){
@@ -52,9 +51,10 @@ public class ReviewService {
 
     private String saveImage(MultipartFile imageFile) throws IOException{
         String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
-        Path imagePath = Paths.get(reviewImageDir,fileName);
+        Path imagePath = Paths.get("src/main/resources/static/images",fileName);
         Files.copy(imageFile.getInputStream(), imagePath, StandardCopyOption.REPLACE_EXISTING);
-        return "/review-images/" + fileName;
+        String baseUrl = "http://localhost:8080";
+        return baseUrl + "/images/" + fileName;
     }
 
     @Transactional
@@ -138,6 +138,11 @@ public class ReviewService {
         return mapToDto(review, ticketCategoryDto, imageDtos, likedByCurrentUser);
    }
 
+    public List<ReviewDto> getReviewsByCategory(Long categoryId, Long userId){
+        List<Review> reviews = reviewRepository.findByTicketCategoryId(categoryId);
+        return reviews.stream().map(review -> getReviewDto(review.getId(), userId)).collect(Collectors.toList());
+    }
+
     public void setFeaturedReview(Long userId, Long reviewId){
         //대표 리뷰가 이미 있다면 해제
         reviewRepository.findByUserIdAndIsFeaturedTrue(userId).ifPresent(existingFeaturedReview -> {
@@ -150,6 +155,8 @@ public class ReviewService {
         review.setFeatured(true);
         reviewRepository.save(review);
     }
+
+
 
 
 

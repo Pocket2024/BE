@@ -38,8 +38,7 @@ public class JwtProvider {
     // Token 식별자
     private static final String BEARER_PREFIX = "Bearer ";
 
-    private static final long ACCESS_TOKEN_TIME =
-            1000 * 60 * 30L; // 30 분 1000ms(=1s) *60=(1min)*30 =(30min)
+    private static final long ACCESS_TOKEN_TIME = 1000 * 60 * 60L; // 1시간 1000ms(=1s) *60=(1min)*60=(1hour)
     private static final long REFRESH_TOKEN_TIME = 1000 * 60 * 60 * 24 * 7L;// 7일
 
     @Value("${jwt.secret.key}")

@@ -82,5 +82,11 @@ public class ReviewController {
 
         return ResponseEntity.ok("Review Featured");
     }
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<List<ReviewDto>>getReviewsByCategory(@PathVariable Long categoryId, @RequestParam Long userId){
+        List<ReviewDto> reviews = reviewService.getReviewsByCategory(categoryId, userId);
+        return ResponseEntity.ok(reviews);
+
+    }
 
 }

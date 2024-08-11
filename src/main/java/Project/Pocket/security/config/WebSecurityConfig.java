@@ -40,13 +40,7 @@ public class WebSecurityConfig implements WebMvcConfigurer {
     }
 
 
-//    @Bean
-//    public WebSecurityCustomizer webSecurityCustomizer() {
-//        // h2-console 사용 및 resources 접근 허용 설정
-//        return (web) -> web.ignoring()
-//                .requestMatchers(PathRequest.toH2Console())
-//                .requestMatchers(PathRequest.toStaticResources().atCommonLocations());
-//    }
+
 
     /**
      * 필터를 타고 세션이 아닌 jwt방식을 타고 권한을
