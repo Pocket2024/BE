@@ -40,6 +40,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
 
+import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
 import java.io.File;
 import java.io.IOException;
@@ -70,7 +71,7 @@ public class UserService {
 
 
     @Transactional
-    public ResponseEntity signup(@Validated  SignUpRequest signUpRequest) {
+    public ResponseEntity signup(@Validated  SignUpRequest signUpRequest, HttpServletRequest request) {
         String email = signUpRequest.getEmail();
         String nickname = signUpRequest.getNickName();
         String password = passwordEncoder.encode(signUpRequest.getPassword());
@@ -88,17 +89,13 @@ public class UserService {
         }
         UserRoleEnum role = UserRoleEnum.MEMBER;
         User user = signUpRequest.toEntity(role, password);
-        String defaultProfileImage = "http://localhost:8080/images/default.png";
-        user.setProfileImage(defaultProfileImage);
+        // 기본 프로필 이미지 설정
+        String baseUrl = String.format("%s://%s:%d", request.getScheme(), request.getServerName(), request.getServerPort());
+        String defaultProfileImageUrl = baseUrl + "/images/default.png";
+        user.setProfileImage(defaultProfileImageUrl);
 
         userRepository.save(user);
-        // User 객체의 프로필 이미지 URL 확인
-        System.out.println("Profile Image URL in User entity: " + user.getProfileImage());
-
         UserDto userDto = user.toDto();
-        // DTO에서 프로필 이미지 URL 확인
-        System.out.println("Profile Image URL in UserDto: " + userDto.getProfileImageUrl());
-
         return ResponseEntity.ok(userDto);
     }
 
@@ -144,7 +141,7 @@ public class UserService {
     }
 
     //파일 저장 메서드
-    public String saveProfileImage(MultipartFile file) throws IOException{
+    public String saveProfileImage(MultipartFile file, HttpServletRequest request) throws IOException{
         if(file.isEmpty()){
             throw new IllegalArgumentException("Cannot upload an empty file");
         }
@@ -154,12 +151,13 @@ public class UserService {
 
         //파일 저장
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-        String baseUrl = "http://localhost:8080";
+
+        String baseUrl = String.format("%s://%s:%d", request.getScheme(), request.getServerName(), request.getServerPort());
         return baseUrl + "/images/" + fileName;
     }
 
 //    //회원 정보 수정
-    public UserDto updateUser(Long userId, UserUpdateRequest request) throws UserNotFoundException,IOException {
+    public UserDto updateUser(Long userId, UserUpdateRequest request, HttpServletRequest httprequest) throws UserNotFoundException,IOException {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found with id "+ userId));
 
 
@@ -174,7 +172,7 @@ public class UserService {
             user.setPhoneNumber(request.getPhoneNumber());
         }
         if (request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
-            String profileImagePath = saveProfileImage(request.getProfileImage());
+            String profileImagePath = saveProfileImage(request.getProfileImage(),httprequest );
             user.setProfileImage(profileImagePath);
      }
         //수정된 정보 저장

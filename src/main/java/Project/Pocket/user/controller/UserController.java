@@ -32,12 +32,23 @@ public class UserController {
 
 
     @PostMapping("/signup")
-    public ResponseEntity signup(@RequestBody @Validated SignUpRequest signUpRequest) {
-        //패스워드 1과 패스워드 2 가 동일 한지 체크
+    public ResponseEntity signup(@RequestBody @Validated SignUpRequest signUpRequest, HttpServletRequest request) {
+        // 패스워드 1과 패스워드 2가 동일한지 체크
         if (!signUpRequest.getPassword().equals(signUpRequest.getPassword2())) {
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다. 다시 입력해주세요.");
+            // 비밀번호가 일치하지 않는 경우 400 Bad Request 반환
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("비밀번호가 일치하지 않습니다. 다시 입력해주세요.");
         }
-        return userService.signup(signUpRequest);
+
+        // 회원가입 처리
+        try {
+            // signup 메서드에 HttpServletRequest를 전달
+            return userService.signup(signUpRequest, request);
+        } catch (Exception e) {
+            // 회원가입 중 에러가 발생한 경우 500 Internal Server Error 반환
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("회원가입 중 문제가 발생했습니다. 다시 시도해주세요.");
+        }
     }
 
     /**
@@ -98,8 +109,8 @@ public class UserController {
         return jwtProvider.reissueAtk(user.getEmail(), user.getRole(), tokenRequest.getRefreshToken());
     }
 
-    @GetMapping("/details")
-    public ResponseEntity<UserDto> getUserDetails() {
+    @GetMapping("/details/{userId}")
+    public ResponseEntity<UserDto> getUserDetails(@PathVariable Long userId) {
         User currentUser = userService.getCurrentUser();
         //현재 로그인한 사용자의 정보가 없을 경우
         if (currentUser == null) {
@@ -112,7 +123,7 @@ public class UserController {
     }
 
     @PutMapping("/{userId}")
-    public ResponseEntity<UserDto> updateUser(@PathVariable Long userId, @ModelAttribute UserUpdateRequest request) {
+    public ResponseEntity<UserDto> updateUser(@PathVariable Long userId, @ModelAttribute UserUpdateRequest request, HttpServletRequest httpRequest) {
         User currentUser = userService.getCurrentUser();
 
         // 현재 로그인한 사용자의 권한을 확인하고 수정하려는 사용자 정보의 소유자인지 검증할 수 있습니다.
@@ -120,7 +131,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         try {
-            UserDto updatedUserDto  = userService.updateUser(userId,request);
+            UserDto updatedUserDto  = userService.updateUser(userId,request, httpRequest);
             return ResponseEntity.ok(updatedUserDto);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);

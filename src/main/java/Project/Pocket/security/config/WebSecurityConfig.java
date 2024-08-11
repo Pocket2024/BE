@@ -55,6 +55,8 @@ public class WebSecurityConfig implements WebMvcConfigurer {
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
         http.authorizeHttpRequests()
+                // 정적 리소스에 대한 접근 허용
+                .antMatchers("/images/**", "/css/**", "/js/**", "/static/**").permitAll()
                 .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .antMatchers("/api/users/signup").permitAll()
                 .antMatchers("/login").permitAll()
