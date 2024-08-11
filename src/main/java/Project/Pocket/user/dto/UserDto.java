@@ -17,6 +17,7 @@ public class UserDto {
     private int ticketCategoryCount;
     private int reviewCount;
     private Long featuredReviewId;
+    private boolean FollowedByCurrentUser;
 
 
 

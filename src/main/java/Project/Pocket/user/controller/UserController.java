@@ -117,7 +117,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
         //사용자 정보 조회 후 UserDTO 반환
-        UserDto userDetails = userService.getUserDetails(currentUser.getId());
+        UserDto userDetails = userService.getUserDetails(userId);
         return ResponseEntity.ok(userDetails);
 
     }

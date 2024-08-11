@@ -215,6 +215,10 @@ public class UserService {
             Long featuredReviewId = featuredReview.getId();
             userDto.setFeaturedReviewId(featuredReviewId);
         });
+        //팔로잉 여부 확인
+        User currentUser = getCurrentUser();
+        boolean isFollowing = followRepository.existsByFollowerAndFollowing(currentUser, user);
+        userDto.setFollowedByCurrentUser(isFollowing);
 
 
         return userDto;

@@ -50,6 +50,9 @@ public class ReviewService {
     }
 
     private String saveImage(MultipartFile imageFile) throws IOException{
+        if (imageFile == null || imageFile.isEmpty()) {
+            return ""; //
+        }
         String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
         Path imagePath = Paths.get("src/main/resources/static/images",fileName);
         Files.copy(imageFile.getInputStream(), imagePath, StandardCopyOption.REPLACE_EXISTING);
@@ -58,7 +61,7 @@ public class ReviewService {
     }
 
     @Transactional
-    public Review createReview(ReviewRequest reviewRequest){
+    public Review createReview(ReviewRequest reviewRequest) {
         // 사용자 ID와 카테고리 ID가 올바르게 전달되는지 확인
         TicketCategory ticketCategory = ticketCategoryService.getTicketCategoryById(reviewRequest.getTicketCategoryId());
         if (ticketCategory == null) {
@@ -78,21 +81,30 @@ public class ReviewService {
         review.setTitle(reviewRequest.getTitle());
         review.setSeat(reviewRequest.getSeat());
         review.setUser(user);
-        //이미지 파일들 저장 + 그 url을 리스트로 반환
-        List<Image> images = reviewRequest.getImages().stream().map(file -> {
-            try{
+        //리뷰 저장
+        review = reviewRepository.save(review);
+        // 이미지 파일들 저장 + 그 url을 리스트로 반환
+        List<Image> images = new ArrayList<>();
+        for (MultipartFile file : reviewRequest.getImages()) {
+            try {
                 String imageUrl = saveImage(file);
                 Image image = new Image();
                 image.setReview(review);
                 image.setUrl(imageUrl);
-                return image;
-            }catch(IOException e){
-                throw new RuntimeException("Failed to save Image",e);
+                images.add(image);
+            } catch (IOException e) {
+                // 이미지 저장 실패 시 로깅하거나 적절히 처리
+                System.err.println("Failed to save image: " + e.getMessage());
             }
-        }).collect(Collectors.toList());
+        }
 
+        // 이미지와 리뷰를 연관 짓기
         review.setImages(images);
-        return reviewRepository.save(review);
+        reviewRepository.save(review);
+
+        return review;
+
+
     }
 
     @Transactional(readOnly = true)
