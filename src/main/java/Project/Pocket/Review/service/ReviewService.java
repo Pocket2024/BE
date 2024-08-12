@@ -65,7 +65,7 @@ public class ReviewService {
     }
 
     @Transactional
-    public Review createReview(ReviewRequest reviewRequest, Long customImageId) {
+    public Review createReview(ReviewRequest reviewRequest, MultipartFile customImageFile) {
         // 사용자 ID와 카테고리 ID가 올바르게 전달되는지 확인
         TicketCategory ticketCategory = ticketCategoryService.getTicketCategoryById(reviewRequest.getTicketCategoryId());
         if (ticketCategory == null) {
@@ -101,18 +101,23 @@ public class ReviewService {
                 System.err.println("Failed to save image: " + e.getMessage());
             }
         }
-        // 이미지와 리뷰를 연관 짓기
+        // 이미지와 리뷰를 매칭
         review.setImages(images);
-        reviewRepository.save(review);
+       //커스텀 이미지 저장 및 리뷰와 매칭
+        if(customImageFile != null && !customImageFile.isEmpty()){
+            try{
+                String customImageUrl = saveImage(customImageFile);
+                CustomImage customImage = new CustomImage();
+                customImage.setCustomImageUrl(customImageUrl);
+                customImage = customImageRepository.save(customImage);
+                review.setCustomImage(customImage);
 
-        if (customImageId != null && !customImageId.toString().isEmpty()) {
-            CustomImage customImage = customImageRepository.findById(customImageId)
-                    .orElseThrow(() -> new IllegalArgumentException("Custom image not found with id: " + customImageId));
-            review.setCustomImage(customImage);
+            }catch(IOException e){
+                System.out.println("Failed to save custom image " + e.getMessage());
+
+            }
         }
-
-        return review;
-
+        return reviewRepository.save(review);
 
     }
 
@@ -142,7 +147,7 @@ public class ReviewService {
         reviewDto.setTitle(review.getTitle());
         reviewDto.setLocation(review.getLocation());
         if(review.getCustomImage() != null){
-            reviewDto.setCustomImageId(review.getCustomImage().getId());
+            reviewDto.setCustomImageUrl(review.getCustomImage().getCustomImageUrl());
         }
 
         return reviewDto;
@@ -165,8 +170,8 @@ public class ReviewService {
         //review -> DTO
         ReviewDto reviewDto =  mapToDto(review, ticketCategoryDto, imageDtos, likedByCurrentUser);
         //DTO에 작성자 닉네임, 프로필이미지 추가 설정
-        reviewDto.setAuthorNickname(review.getUser().getNickname());
-        reviewDto.setAuthorProfileImageUrl(review.getUser().getProfileImage());
+        reviewDto.setAuthorNickname(authorNickname);
+        reviewDto.setAuthorProfileImageUrl(authorProfileImageUrl);
 
         return reviewDto;
 

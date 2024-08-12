@@ -6,6 +6,7 @@ import Project.Pocket.Like.service.LikeService;
 import Project.Pocket.Review.dto.ReviewDto;
 import Project.Pocket.Review.dto.ReviewRequest;
 
+import Project.Pocket.Review.entity.Review;
 import Project.Pocket.Review.service.ReviewService;
 
 import Project.Pocket.TicketCategory.service.TicketCategoryService;
@@ -19,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 
 import java.util.List;
@@ -44,10 +46,13 @@ public class ReviewController {
     }
 
     @PostMapping
-    public ResponseEntity<String> createReview(@ModelAttribute @Validated ReviewRequest reviewRequest, Long customImageId) {
+    public ResponseEntity<String> createReview(@ModelAttribute @Validated ReviewRequest reviewRequest, @RequestParam(value = "customImageFile", required = false) MultipartFile customImageFile) {
+        Review review = reviewService.createReview(reviewRequest, customImageFile);
+        // 커스텀 이미지가 존재하는 경우 URL 반환, 없으면 null 반환
+        String customImageUrl = review.getCustomImage() != null ? review.getCustomImage().getCustomImageUrl() : null;
 
-            reviewService.createReview(reviewRequest, customImageId);
-            return ResponseEntity.ok("Review created successfully");
+        // 커스텀 이미지 URL을 반환
+        return ResponseEntity.ok(customImageUrl);
 
 
     }

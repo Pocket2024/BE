@@ -11,4 +11,5 @@ public class TicketCategoryResponse {
 
     private List<TicketCategoryDto> categories;
     private int totalCategories;
+
 }

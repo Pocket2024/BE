@@ -27,23 +27,23 @@ public class CustomImageController {
         this.reviewService = reviewService;
     }
 
-    @PostMapping("/upload")
-    public ResponseEntity<CustomImageResponse> uploadCustomImage(@RequestParam("image")MultipartFile imageFile){
-        try{
-            String imageUrl = reviewService.saveImage(imageFile);
-            CustomImage customImage = new CustomImage();
-            customImage.setCustomImageUrl(imageUrl);
-            // 커스텀 이미지 저장
-            customImage = customImageRepository.save(customImage);
+        @PostMapping("/upload")
+        public ResponseEntity<CustomImageResponse> uploadCustomImage(@RequestParam("image")MultipartFile imageFile){
+            try{
+                String imageUrl = reviewService.saveImage(imageFile);
+                CustomImage customImage = new CustomImage();
+                customImage.setCustomImageUrl(imageUrl);
+                // 커스텀 이미지 저장
+                customImage = customImageRepository.save(customImage);
 
-            //응답 객체 생성
-            CustomImageResponse customImageResponse = new CustomImageResponse(customImage.getId(), imageUrl);
+                //응답 객체 생성
+                CustomImageResponse customImageResponse = new CustomImageResponse(customImage.getId(), imageUrl);
 
-            return ResponseEntity.ok(customImageResponse);
+                return ResponseEntity.ok(customImageResponse);
 
-        }catch (IOException e){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            }catch (IOException e){
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            }
         }
-    }
 
 }
