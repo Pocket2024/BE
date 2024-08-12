@@ -44,9 +44,9 @@ public class ReviewController {
     }
 
     @PostMapping
-    public ResponseEntity<String> createReview(@ModelAttribute @Validated ReviewRequest reviewRequest) {
+    public ResponseEntity<String> createReview(@ModelAttribute @Validated ReviewRequest reviewRequest, Long customImageId) {
 
-            reviewService.createReview(reviewRequest);
+            reviewService.createReview(reviewRequest, customImageId);
             return ResponseEntity.ok("Review created successfully");
 
 

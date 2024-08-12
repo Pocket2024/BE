@@ -1,5 +1,7 @@
 package Project.Pocket.Review.service;
 
+import Project.Pocket.CustomImage.entity.CustomImage;
+import Project.Pocket.CustomImage.entity.CustomImageRepository;
 import Project.Pocket.Image.entity.Image;
 import Project.Pocket.Image.entity.ImageDto;
 import Project.Pocket.Image.entity.ImageRepository;
@@ -38,18 +40,20 @@ public class ReviewService {
     private final ImageRepository imageRepository;
     private final UserService userService;
     private final LikeRepository likeRepository;
+    private final CustomImageRepository customImageRepository;
 
 
     @Autowired
-    public ReviewService(@Lazy TicketCategoryService ticketCategoryService, ReviewRepository reviewRepository, ImageRepository imageRepository, @Lazy UserService userService, LikeRepository likeRepository){
+    public ReviewService(@Lazy TicketCategoryService ticketCategoryService, ReviewRepository reviewRepository, ImageRepository imageRepository, @Lazy UserService userService, LikeRepository likeRepository, CustomImageRepository customImageRepository){
         this.ticketCategoryService = ticketCategoryService;
         this.reviewRepository = reviewRepository;
         this.imageRepository = imageRepository;
         this.userService = userService;
         this.likeRepository = likeRepository;
+        this.customImageRepository = customImageRepository;
     }
 
-    private String saveImage(MultipartFile imageFile) throws IOException{
+    public String saveImage(MultipartFile imageFile) throws IOException{
         if (imageFile == null || imageFile.isEmpty()) {
             return ""; //
         }
@@ -61,7 +65,7 @@ public class ReviewService {
     }
 
     @Transactional
-    public Review createReview(ReviewRequest reviewRequest) {
+    public Review createReview(ReviewRequest reviewRequest, Long customImageId) {
         // 사용자 ID와 카테고리 ID가 올바르게 전달되는지 확인
         TicketCategory ticketCategory = ticketCategoryService.getTicketCategoryById(reviewRequest.getTicketCategoryId());
         if (ticketCategory == null) {
@@ -97,10 +101,15 @@ public class ReviewService {
                 System.err.println("Failed to save image: " + e.getMessage());
             }
         }
-
         // 이미지와 리뷰를 연관 짓기
         review.setImages(images);
         reviewRepository.save(review);
+
+        if (customImageId != null) {
+            CustomImage customImage = customImageRepository.findById(customImageId)
+                    .orElseThrow(() -> new IllegalArgumentException("Custom image not found with id: " + customImageId));
+            review.setCustomImage(customImage);
+        }
 
         return review;
 
@@ -132,6 +141,7 @@ public class ReviewService {
         reviewDto.setSeat(review.getSeat());
         reviewDto.setTitle(review.getTitle());
         reviewDto.setLocation(review.getLocation());
+        reviewDto.setCustomImageId(review.getCustomImage().getId());
         return reviewDto;
    }
 

@@ -1,5 +1,6 @@
 package Project.Pocket.Review.entity;
 
+import Project.Pocket.CustomImage.entity.CustomImage;
 import Project.Pocket.Image.entity.Image;
 import Project.Pocket.Like.entity.Like;
 import Project.Pocket.Review.dto.ReviewDto;
@@ -60,6 +61,10 @@ public class Review {
 
     @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private Set<Like> likes = new HashSet<>();
+
+    @OneToOne
+    @JoinColumn(name = "custom_image_id")
+    private CustomImage customImage;
 
 
 
