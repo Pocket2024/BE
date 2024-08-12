@@ -10,4 +10,5 @@ import java.util.List;
 public interface TicketCategoryRepository extends JpaRepository<TicketCategory, Long> {
     int countByUserId(Long userId);
     List<TicketCategory> findByUser(User user);
+
 }

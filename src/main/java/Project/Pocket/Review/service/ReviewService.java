@@ -105,7 +105,7 @@ public class ReviewService {
         review.setImages(images);
         reviewRepository.save(review);
 
-        if (customImageId != null) {
+        if (customImageId != null && !customImageId.toString().isEmpty()) {
             CustomImage customImage = customImageRepository.findById(customImageId)
                     .orElseThrow(() -> new IllegalArgumentException("Custom image not found with id: " + customImageId));
             review.setCustomImage(customImage);
@@ -141,13 +141,19 @@ public class ReviewService {
         reviewDto.setSeat(review.getSeat());
         reviewDto.setTitle(review.getTitle());
         reviewDto.setLocation(review.getLocation());
-        reviewDto.setCustomImageId(review.getCustomImage().getId());
+        if(review.getCustomImage() != null){
+            reviewDto.setCustomImageId(review.getCustomImage().getId());
+        }
+
         return reviewDto;
    }
 
 
    public ReviewDto getReviewDto(Long reviewId, Long userId){
         Review review = reviewRepository.findById(reviewId).orElseThrow(() -> new IllegalArgumentException("Review not found"));
+        User author =review.getUser();
+        String authorNickname = author.getNickname();
+        String authorProfileImageUrl = author.getProfileImage();
         //TicketCategory -> DTO
         TicketCategoryDto ticketCategoryDto = ticketCategoryService.getTicketCategoryDtoById(review.getTicketCategory().getId());
        //이미지 -> DTO
@@ -156,8 +162,14 @@ public class ReviewService {
                .collect(Collectors.toList());
 
         boolean likedByCurrentUser = likeRepository.existsByReviewIdAndUserId(reviewId, userId);
-        //review -> DTO 전환
-        return mapToDto(review, ticketCategoryDto, imageDtos, likedByCurrentUser);
+        //review -> DTO
+        ReviewDto reviewDto =  mapToDto(review, ticketCategoryDto, imageDtos, likedByCurrentUser);
+        //DTO에 작성자 닉네임, 프로필이미지 추가 설정
+        reviewDto.setAuthorNickname(review.getUser().getNickname());
+        reviewDto.setAuthorProfileImageUrl(review.getUser().getProfileImage());
+
+        return reviewDto;
+
    }
 
     public List<ReviewDto> getReviewsByCategory(Long categoryId, Long userId){

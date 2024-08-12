@@ -22,6 +22,8 @@ public class ReviewDto {
     private boolean likedByCurrentUser;
     private int likes;
     private Long customImageId;
+    private String authorNickname;
+    private String authorProfileImageUrl;
 
 
 }

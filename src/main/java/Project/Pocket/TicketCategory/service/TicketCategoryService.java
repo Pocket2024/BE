@@ -1,5 +1,6 @@
 package Project.Pocket.TicketCategory.service;
 
+import Project.Pocket.Review.entity.ReviewRepository;
 import Project.Pocket.TicketCategory.dto.TicketCategoryDto;
 import Project.Pocket.TicketCategory.dto.TicketCategoryRequest;
 import Project.Pocket.TicketCategory.dto.TicketCategoryResponse;
@@ -18,11 +19,13 @@ import java.util.stream.Collectors;
 public class TicketCategoryService {
     private final TicketCategoryRepository ticketCategoryRepository;
     private final UserService userService;
+    private final ReviewRepository reviewRepository;
 
     @Autowired
-    public TicketCategoryService(TicketCategoryRepository ticketCategoryRepository, @Lazy UserService userService){
+    public TicketCategoryService(TicketCategoryRepository ticketCategoryRepository, @Lazy UserService userService, ReviewRepository reviewRepository){
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.userService = userService;
+        this.reviewRepository = reviewRepository;
     }
 
     public TicketCategoryDto createTicketCategory(Long userId, TicketCategoryRequest ticketCategoryRequest){
@@ -53,7 +56,12 @@ public class TicketCategoryService {
 
         // 카테고리 리스트 --> DTO
         List<TicketCategoryDto> dtoList = categories.stream()
-                .map(category -> mapToDto(category))
+                .map(category ->{
+                    TicketCategoryDto ticketCategoryDto = mapToDto(category);
+                    int reviewCount = reviewRepository.countByTicketCategory(category);
+                    ticketCategoryDto.setReviewCount(reviewCount);
+                    return ticketCategoryDto;
+                })
                 .collect(Collectors.toList());
 
         //응답 객체 생성
