@@ -93,5 +93,13 @@ public class ReviewController {
         return ResponseEntity.ok(reviews);
 
     }
+    @GetMapping("/search")
+    public ResponseEntity<List<ReviewDto>> searchReviews(@RequestParam String keyword, @RequestParam String searchType){
+        if (!List.of("title", "content", "location", "seat", "date").contains(searchType)) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        List<ReviewDto> reviewDtos = reviewService.searchReviews(keyword, searchType);
+        return ResponseEntity.ok(reviewDtos);
+    }
 
 }

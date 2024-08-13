@@ -195,6 +195,13 @@ public class ReviewService {
         reviewRepository.save(review);
     }
 
+    public List<ReviewDto> searchReviews(String keyword, String searchType){
+        Long currentUserId = userService.getCurrentUser().getId();
+        List<Review> reviews = reviewRepository.searchByField(keyword,searchType);
+        System.out.println("Search Results: " + reviews);
+        return reviews.stream().map(review -> getReviewDto(review.getId(), currentUserId)).collect(Collectors.toList());
+    }
+
 
 
 

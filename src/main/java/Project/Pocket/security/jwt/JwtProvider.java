@@ -101,16 +101,16 @@ public class JwtProvider {
      * @param role
      * @return 에세스토큰과 리프레쉬토큰을 담은 DTO 반환
      */
-    public TokenResponse createTokenByLogin(String email, UserRoleEnum role) {
+    public TokenResponse createTokenByLogin(String email, UserRoleEnum role,Long userId) {
         String accessToken = createToken(email, role, ACCESS_TOKEN_TIME);
         String refreshToken = createToken(email, role, REFRESH_TOKEN_TIME);
         redisDao.setRefreshToken(email, refreshToken, REFRESH_TOKEN_TIME);
-        return new TokenResponse(accessToken, refreshToken);
+        return new TokenResponse(accessToken, refreshToken, userId);
     }
 
     //AccessToken 재발행 + refreshToken 함께 발행
 
-    public TokenResponse reissueAtk(String email, UserRoleEnum role, String reToken) {
+    public TokenResponse reissueAtk(String email, UserRoleEnum role, String reToken,Long userId) {
         // 레디스 저장된 리프레쉬토큰값을 가져와서 입력된 reToken 같은지 유무 확인
         if (!redisDao.getRefreshToken(email).equals(reToken)) {
             throw new CustomException(
@@ -119,7 +119,7 @@ public class JwtProvider {
         String accessToken = createToken(email, role, ACCESS_TOKEN_TIME);
         String refreshToken = createToken(email, role, REFRESH_TOKEN_TIME);
         redisDao.setRefreshToken(email, refreshToken, REFRESH_TOKEN_TIME);
-        return new TokenResponse(accessToken, refreshToken);
+        return new TokenResponse(accessToken, refreshToken,userId);
     }
 
     /**

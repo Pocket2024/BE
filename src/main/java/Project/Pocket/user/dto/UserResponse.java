@@ -4,10 +4,12 @@ import Project.Pocket.user.entity.User;
 import Project.Pocket.user.entity.UserRoleEnum;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.io.Serializable;
 
 @Getter
+@Setter
 @NoArgsConstructor(force = true)
 public class UserResponse implements Serializable {
 
@@ -17,6 +19,7 @@ public class UserResponse implements Serializable {
     private final UserRoleEnum role;
 
     private final String profileImage;
+    private final Long userId;
 
     /**
      *  유저 생성자를 private로 외부에서 생성 할수 없도록 함
@@ -27,6 +30,7 @@ public class UserResponse implements Serializable {
         this.nickname = user.getNickname();
         this.role = user.getRole();
         this.profileImage = user.getProfileImage();
+        this.userId = user.getId();
     }
 
     /**

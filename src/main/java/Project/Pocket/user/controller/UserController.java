@@ -60,8 +60,8 @@ public class UserController {
     @PostMapping("/login")
     public TokenResponse login(@RequestBody LoginRequest loginRequest, HttpServletResponse response) {
         UserResponse user = userService.login(loginRequest);
-        TokenResponse token = jwtProvider.createTokenByLogin(user.getEmail(),
-                user.getRole());//atk, rtk 생성
+        TokenResponse token = jwtProvider.createTokenByLogin(user.getEmail(), user.getRole(), user.getUserId());
+
         response.addHeader(jwtProvider.AUTHORIZATION_HEADER, token.getAccessToken());// 헤더에 엑세스 토큰만 싣기
         return token;
     }
@@ -106,7 +106,7 @@ public class UserController {
                                       @RequestBody ReissueTokenRequest tokenRequest) {
         //유저 객체 정보를 이용하여 토큰 발행
         UserResponse user = UserResponse.of(userDetails.getUser());
-        return jwtProvider.reissueAtk(user.getEmail(), user.getRole(), tokenRequest.getRefreshToken());
+        return jwtProvider.reissueAtk(user.getEmail(), user.getRole(), tokenRequest.getRefreshToken(), user.getUserId());
     }
 
     @GetMapping("/details/{userId}")
@@ -121,6 +121,7 @@ public class UserController {
         return ResponseEntity.ok(userDetails);
 
     }
+
 
     @PutMapping("/{userId}")
     public ResponseEntity<UserDto> updateUser(@PathVariable Long userId, @ModelAttribute UserUpdateRequest request, HttpServletRequest httpRequest) {
