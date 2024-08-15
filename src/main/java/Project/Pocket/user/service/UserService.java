@@ -145,6 +145,7 @@ public class UserService {
         if(file.isEmpty()){
             throw new IllegalArgumentException("Cannot upload an empty file");
         }
+
         //파일 이름과 경로 설정
         String fileName = file.getOriginalFilename();
         Path filePath = Paths.get("src/main/resources/static/images", fileName);
@@ -168,10 +169,14 @@ public class UserService {
             user.setEmail(request.getEmail());
         }
 
+
         if(request.getPhoneNumber() != null){
             user.setPhoneNumber(request.getPhoneNumber());
         }
+
+
         if (request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
+
             String profileImagePath = saveProfileImage(request.getProfileImage(),httprequest );
             user.setProfileImage(profileImagePath);
      }

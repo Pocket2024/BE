@@ -31,7 +31,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.mysql:mysql-connector-j'
-	//runtimeOnly 'mysql:mysql-connector-java:8.3.0'
+
 
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -39,12 +39,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	implementation "org.springframework.security:spring-security-config:5.6.0"
-//	implementation 'com.fasterxml.jackson.core:jackson-core'
-//	implementation 'com.fasterxml.jackson.core:jackson-databind'
-//	implementation 'com.fasterxml.jackson.core:jackson-annotations'
-//	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
-//	implementation 'io.jsonwebtoken:jjwt:0.9.1'
+
+
 	//jwt
 	compileOnly group: 'io.jsonwebtoken', name: 'jjwt-api', version: '0.11.2'
 	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-impl', version: '0.11.2'
@@ -55,6 +52,13 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	//oauth2
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
+	// Naver Clova OCR
+	implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+	implementation 'org.apache.httpcomponents:httpcore:4.4.15'
+	implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.3'
+	implementation "org.apache.httpcomponents:httpmime:4.3"
+
 
 
 
