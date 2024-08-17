@@ -159,11 +159,15 @@ public class UserService {
 
 //    //회원 정보 수정
     public UserDto updateUser(Long userId, UserUpdateRequest request, HttpServletRequest httprequest) throws UserNotFoundException,IOException {
+
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found with id "+ userId));
 
 
         if (request.getNickName() != null) {
             user.setNickname(request.getNickName());
+        }
+        if(request.getBio() != null){
+            user.setBio(request.getBio());
         }
         if (request.getEmail() != null) {
             user.setEmail(request.getEmail());
@@ -176,7 +180,6 @@ public class UserService {
 
 
         if (request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
-
             String profileImagePath = saveProfileImage(request.getProfileImage(),httprequest );
             user.setProfileImage(profileImagePath);
      }
@@ -229,4 +232,6 @@ public class UserService {
         return userDto;
 
     }
+
+
 }

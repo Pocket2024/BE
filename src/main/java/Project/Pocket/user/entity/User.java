@@ -73,6 +73,8 @@ public class User implements Serializable {
         userDto.setNickName(this.nickname);
         userDto.setProfileImageUrl(this.profileImage);
         userDto.setBio(this.bio);
+        userDto.setEmail(this.email);
+        userDto.setPhoneNumber(this.phoneNumber);
         return userDto;
     }
 

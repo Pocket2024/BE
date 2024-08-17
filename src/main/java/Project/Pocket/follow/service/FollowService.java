@@ -22,16 +22,23 @@ public class FollowService {
     private FollowRepository followRepository;
     @Autowired
     private UserRepository userRepository;
-
+    @Transactional
     public void follow(User follower, User following){
         // 중복 팔로우 방지
         if(followRepository.existsByFollowerAndFollowing(follower, following)){
-            throw new FollowException(("이미 팔로우한 사용자입니다."));
+            throw new FollowException(("Already followed"));
         }
         Follow follow = new Follow();
         follow.setFollower(follower);
         follow.setFollowing(following);
         followRepository.save(follow);
+    }
+    @Transactional
+    public void unfollow(User follower, User following){
+        if(!followRepository.existsByFollowerAndFollowing(follower,following)){
+            throw new IllegalArgumentException("Not followed yet");
+        }
+        followRepository.deleteByFollowerAndFollowing(follower,following);
     }
 
 

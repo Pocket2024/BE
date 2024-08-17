@@ -36,7 +36,19 @@ public class FollowController {
 
         followService.follow(follower, following);
 
-        return ResponseEntity.ok("팔로우 성공");
+        return ResponseEntity.ok("Follow succeed");
+    }
+
+    @PostMapping("/unfollow")
+    public ResponseEntity<String> unfollowUser(@RequestBody @Validated FollowRequest followRequest, Authentication authentication){
+        if(authentication == null || !authentication.isAuthenticated()){
+            return ResponseEntity.status((HttpStatus.UNAUTHORIZED)).body("Unauthorized");
+        }
+        User follower = followService.getUserByID(followRequest.getFollowerId());
+        User following = followService.getUserByID(followRequest.getFollowingId());
+
+        followService.unfollow(follower,following);
+        return ResponseEntity.ok("Unfollow succeed");
     }
     @GetMapping("/followers/{userId}")
     public ResponseEntity<List<User>> getFollowers(@PathVariable Long userId) {

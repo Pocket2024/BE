@@ -30,9 +30,9 @@ public class TicketCategoryController {
         TicketCategoryDto ticketCategoryDto = ticketCategoryService.createTicketCategory(userId, ticketCategoryRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(ticketCategoryDto);
     }
-    @GetMapping("getTicketCategories")
-    public ResponseEntity<TicketCategoryResponse> getTicketCategories(){
-        User user = userService.getCurrentUser();
+    @GetMapping("getTicketCategories/{userId}")
+    public ResponseEntity<TicketCategoryResponse> getTicketCategories(@PathVariable Long userId){
+        User user = userService.getUserById(userId);
         TicketCategoryResponse response = ticketCategoryService.getTicketCategoryByUser(user);
         return ResponseEntity.ok(response);
     }

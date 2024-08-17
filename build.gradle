@@ -60,6 +60,8 @@ dependencies {
 	implementation "org.apache.httpcomponents:httpmime:4.3"
 
 
+	implementation 'ch.qos.logback:logback-classic'
+
 
 
 

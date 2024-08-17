@@ -11,6 +11,8 @@ public class UserDto {
     private Long id;
     private String nickName;
     private String bio;
+    private String email;
+    private String phoneNumber;
     private String profileImageUrl;
     private int followersCount;
     private int followingsCount;

@@ -123,8 +123,9 @@ public class UserController {
     }
 
 
-    @PutMapping("/{userId}")
+    @PostMapping("/{userId}")
     public ResponseEntity<UserDto> updateUser(@PathVariable Long userId, @ModelAttribute UserUpdateRequest request, HttpServletRequest httpRequest) {
+        System.out.println("Profile Image = " + request.getProfileImage());
         User currentUser = userService.getCurrentUser();
 
         // 현재 로그인한 사용자의 권한을 확인하고 수정하려는 사용자 정보의 소유자인지 검증할 수 있습니다.
@@ -132,7 +133,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         try {
-            UserDto updatedUserDto  = userService.updateUser(userId,request, httpRequest);
+            UserDto updatedUserDto  = userService.updateUser(userId, request, httpRequest);
             return ResponseEntity.ok(updatedUserDto);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);

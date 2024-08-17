@@ -16,9 +16,14 @@ public class LikeController {
         this.likeService = likeService;
     }
 
-    @PostMapping("/review/{reviewId}")
+    @PostMapping("/like/{reviewId}")
     public ResponseEntity<Void> likeReview(@PathVariable Long reviewId, @RequestParam Long userId){
         likeService.likeReview(reviewId, userId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+    @DeleteMapping("/unlike/{reviewId}")
+    public ResponseEntity<String> unlikeReview(@PathVariable Long reviewId, @RequestParam Long userId){
+        likeService.unlikeReview(reviewId,userId);
+        return ResponseEntity.ok("Unlike succeed");
     }
 }
