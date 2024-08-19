@@ -102,4 +102,10 @@ public class ReviewController {
         return ResponseEntity.ok(reviewDtos);
     }
 
+    @DeleteMapping("/{reviewId}")
+    public ResponseEntity<String> deleteReview(@PathVariable Long reviewId, @RequestParam Long userId) {
+        reviewService.deleteReview(reviewId, userId);
+        return ResponseEntity.ok("Review deleted");
+    }
+
 }

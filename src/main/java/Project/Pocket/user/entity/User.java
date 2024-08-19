@@ -1,6 +1,7 @@
 package Project.Pocket.user.entity;
 
 
+import Project.Pocket.Review.entity.Review;
 import Project.Pocket.follow.entity.Follow;
 import Project.Pocket.user.dto.UserDto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -10,7 +11,9 @@ import javax.persistence.*;
 import javax.persistence.criteria.Order;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @JsonIgnoreProperties
@@ -45,13 +48,16 @@ public class User implements Serializable {
     @Column(nullable = false)
     @Enumerated(value = EnumType.STRING)
     private UserRoleEnum role;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Review> reviews = new HashSet<>();
 
 
 
 
 
 
-   @Builder
+
+    @Builder
     public User(String email, String nickname, String password, String bio, String profileImage,String phoneNumber, String address, UserRoleEnum role){
         this.email = email;
         this.nickname = nickname;

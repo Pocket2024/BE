@@ -16,6 +16,6 @@ public class CustomImage {
 
     private String CustomImageUrl;
 
-    @OneToOne(mappedBy = "customImage")
+    @OneToOne(mappedBy = "customImage",cascade = CascadeType.ALL,orphanRemoval = true)
     private Review review;
 }

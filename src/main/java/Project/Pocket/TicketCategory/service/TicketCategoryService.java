@@ -9,10 +9,12 @@ import Project.Pocket.TicketCategory.entity.TicketCategoryRepository;
 import Project.Pocket.user.entity.User;
 import Project.Pocket.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.config.ConfigDataResourceNotFoundException;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Service
@@ -84,6 +86,12 @@ public class TicketCategoryService {
         dto.setColor(ticketCategory.getColor());
         return  dto;
 
+    }
+    public void deleteTicketCategory(Long userId, Long categoryId){
+        User user = userService.getUserById(userId);
+        TicketCategory ticketCategory = ticketCategoryRepository.findById(categoryId).orElseThrow(() -> new NoSuchElementException("TicketCategory not found"));
+
+        ticketCategoryRepository.delete(ticketCategory);
     }
 
 

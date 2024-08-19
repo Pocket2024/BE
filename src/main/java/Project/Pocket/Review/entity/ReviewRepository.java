@@ -16,11 +16,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findByTicketCategoryId(Long ticketCategoryId);
     int countByTicketCategory(TicketCategory ticketCategory);
 
-//    List<Review> findByTitleContaining(String titleKeyword);
-//    List<Review> findBySeatContaining(String seatKeyword);
-//    List<Review> findByLocationContaining(String locationKeyword);
-//    List<Review> findByContentContaining(String contentKeyword);
-//    List<Review> findByDateContaining(String dateKeyword);
+
 
     @Query("SELECT r FROM Review r WHERE " +
             "(r.title LIKE %:keyword% AND :searchType = 'title') OR " +
@@ -29,4 +25,5 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             "(r.seat LIKE %:keyword% AND :searchType = 'seat') OR " +
             "(r.date LIKE %:keyword% AND :searchType = 'date')")
     List<Review> searchByField(@Param("keyword") String keyword, @Param("searchType") String searchType);
+    Optional<Review> findByIdAndUserId(Long reviewId, Long userId);
 }

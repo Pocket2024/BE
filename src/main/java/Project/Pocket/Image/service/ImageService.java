@@ -9,6 +9,8 @@ import java.awt.*;
 @Service
 public class ImageService {
 
+
+
     public static ImageDto mapToDto(Image image){
         ImageDto dto = new ImageDto();
         dto.setId(image.getId());
