@@ -70,16 +70,7 @@ public class ReviewService {
         this.ticketCategoryRepository = ticketCategoryRepository;
     }
 
-//    public String saveImage(MultipartFile imageFile) throws IOException{
-//        if (imageFile == null || imageFile.isEmpty()) {
-//            return ""; //
-//        }
-//        String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
-//        Path imagePath = Paths.get("src/main/resources/static/images" + fileName);
-//        Files.copy(imageFile.getInputStream(), imagePath, StandardCopyOption.REPLACE_EXISTING);
-//        String baseUrl = "http://localhost:8080";
-//        return baseUrl + "/images/" + fileName;
-//    }
+
 public String saveImage(MultipartFile imageFile) throws IOException {
     if (imageFile == null || imageFile.isEmpty()) {
         return ""; // 파일이 없을 경우 빈 문자열 반환
@@ -108,13 +99,10 @@ public String saveImage(MultipartFile imageFile) throws IOException {
         // 전체 파일 경로 설정
         Path imagePath = imageDirectory.resolve(fileName);
 
-
         if (Files.exists(imagePath)) {
             Files.delete(imagePath);
-            System.out.println("File deleted successfully.");
         } else {
-            System.err.println("Image not found at path: " + imagePath.toString());
-            throw new IllegalArgumentException("Image not found: " + fileName);
+            throw new IllegalArgumentException("Image not found");
         }
     }
 
@@ -327,7 +315,21 @@ public String saveImage(MultipartFile imageFile) throws IOException {
     public List<ReviewDto> searchReviews(String keyword, String searchType){
         Long currentUserId = userService.getCurrentUser().getId();
         List<Review> reviews = reviewRepository.searchByField(keyword,searchType);
-        System.out.println("Search Results: " + reviews);
+        return reviews.stream().map(review -> getReviewDto(review.getId(), currentUserId)).collect(Collectors.toList());
+    }
+
+    //최신순으로 리뷰 조회
+    @Transactional(readOnly = true)
+    public List<ReviewDto> getReviewsByLatest(){
+        Long currentUserId = userService.getCurrentUser().getId();
+        List<Review> reviews = reviewRepository.findAllByOrderByCreatedAtDesc();
+        return reviews.stream().map(review -> getReviewDto(review.getId(), currentUserId)).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReviewDto> getReviewsByLikeCount(){
+        Long currentUserId = userService.getCurrentUser().getId();
+        List<Review> reviews = reviewRepository.findAllByOrderByLikeCountDesc();
         return reviews.stream().map(review -> getReviewDto(review.getId(), currentUserId)).collect(Collectors.toList());
     }
 

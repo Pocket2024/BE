@@ -44,10 +44,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.util.Optional;
 
 
@@ -70,38 +67,38 @@ public class UserService {
 
 
 
-    @Transactional
-    public ResponseEntity signup(@Validated  SignUpRequest signUpRequest, HttpServletRequest request) {
-        String email = signUpRequest.getEmail();
-        String nickname = signUpRequest.getNickName();
-        String password = passwordEncoder.encode(signUpRequest.getPassword());
+        @Transactional
+        public ResponseEntity signup(@Validated  SignUpRequest signUpRequest, HttpServletRequest request) {
+            String email = signUpRequest.getEmail();
+            String nickname = signUpRequest.getNickName();
+            String password = passwordEncoder.encode(signUpRequest.getPassword());
 
 
-        //닉네임 중복 확인
-        Optional<User> findNickname = userRepository.findByNickname(nickname);
-        if (findNickname.isPresent()) {
-            throw new CustomException(ExceptionStatus.DUPLICATED_NICKNAME);
+            //닉네임 중복 확인
+            Optional<User> findNickname = userRepository.findByNickname(nickname);
+            if (findNickname.isPresent()) {
+                throw new CustomException(ExceptionStatus.DUPLICATED_NICKNAME);
+            }
+            // 이메일 중복 확인
+            Optional<User> findEmail = userRepository.findByEmail(email);
+            if (findEmail.isPresent()) {
+                throw new CustomException(ExceptionStatus.DUPLICATED_EMAIL);
+            }
+            UserRoleEnum role = UserRoleEnum.MEMBER;
+            User user = signUpRequest.toEntity(role, password);
+            // 기본 프로필 이미지 설정
+            String baseUrl = String.format("%s://%s:%d", request.getScheme(), request.getServerName(), request.getServerPort());
+            String defaultProfileImageUrl = baseUrl + "/images/default.png";
+            user.setProfileImage(defaultProfileImageUrl);
+
+            userRepository.save(user);
+            UserDto userDto = user.toDto();
+            return ResponseEntity.ok(userDto);
         }
-        // 이메일 중복 확인
-        Optional<User> findEmail = userRepository.findByEmail(email);
-        if (findEmail.isPresent()) {
-            throw new CustomException(ExceptionStatus.DUPLICATED_EMAIL);
-        }
-        UserRoleEnum role = UserRoleEnum.MEMBER;
-        User user = signUpRequest.toEntity(role, password);
-        // 기본 프로필 이미지 설정
-        String baseUrl = String.format("%s://%s:%d", request.getScheme(), request.getServerName(), request.getServerPort());
-        String defaultProfileImageUrl = baseUrl + "/images/default.png";
-        user.setProfileImage(defaultProfileImageUrl);
 
-        userRepository.save(user);
-        UserDto userDto = user.toDto();
-        return ResponseEntity.ok(userDto);
-    }
 
-    /**
-     * 로그인 반환값으로 user를 userResponseDto 담아 반환하고  컨트롤러에서 반환된 객체를 이용하여 토큰 발행한다.
-     */
+     // 로그인 반환값으로 user를 userResponseDto 담아 반환하고  컨트롤러에서 반환된 객체를 이용하여 토큰 발행한다.
+
     @Cacheable(cacheNames = CacheNames.LOGINUSER, key = "'login'+ #p0.getEmail()", unless = "#result== null")
     @Transactional
     public UserResponse login(LoginRequest loginRequest) {
@@ -128,7 +125,7 @@ public class UserService {
         }
         return ResponseEntity.ok("로그아웃 완료");
     }
-    //로그인한 회원 정보 조회
+    //로그인한 회원 조회
     public User getCurrentUser(){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if(authentication == null || !authentication.isAuthenticated()){

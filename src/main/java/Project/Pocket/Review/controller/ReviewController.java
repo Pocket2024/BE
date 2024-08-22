@@ -108,4 +108,16 @@ public class ReviewController {
         return ResponseEntity.ok("Review deleted");
     }
 
+    @GetMapping("/latest")
+    public ResponseEntity<List<ReviewDto>> getLatestReviews(){
+        List<ReviewDto> reviews = reviewService.getReviewsByLatest();
+        return ResponseEntity.ok(reviews);
+    }
+
+    @GetMapping("/popular")
+    public ResponseEntity<List<ReviewDto>> getPopularReviews(){
+        List<ReviewDto> reviews = reviewService.getReviewsByLikeCount();
+        return ResponseEntity.ok(reviews);
+    }
+
 }

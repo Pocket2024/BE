@@ -37,18 +37,18 @@ public class LikeService {
     @Transactional
     public void likeReview(Long reviewId, Long userId){
         Review review = reviewRepository.findById(reviewId).orElseThrow(() -> new IllegalArgumentException(("Review with id " + reviewId + " not found! ")));
-
-        User user = userService.getUserById(userId);
-        if(user == null){
-            throw new IllegalArgumentException("User with id "  + userId + " not found!");
+        User currentUser = userService.getCurrentUser();
+        if(!currentUser.getId().equals(userId)){
+            throw new IllegalArgumentException("UserId does not match");
         }
+
         if(likeRepository.existsByReviewIdAndUserId(reviewId, userId)){
-            throw new IllegalArgumentException("User with id " + userId + " already liked this review!");
+            throw new IllegalArgumentException("User with id " + userId + " already liked this review");
         }
 
         Like like = new Like();
         like.setReview(review);
-        like.setUser(user);
+        like.setUser(currentUser);
         likeRepository.save(like);
 
     }
@@ -67,10 +67,8 @@ public class LikeService {
         // 사용자 조회
         User user = userService.getUserById(userId);
         if (user == null) {
-            System.out.println("No user found for userId: " + userId);
             throw new IllegalArgumentException("No user found");
         }
-        System.out.println("Found user: " + user);
 
         // 좋아요 조회
         Like like = likeRepository.findByReviewIdAndUserId(reviewId, userId)
@@ -78,12 +76,10 @@ public class LikeService {
                     System.out.println("No like found for reviewId: " + reviewId + " and userId: " + userId);
                     return new IllegalArgumentException("No like exists");
                 });
-        System.out.println("Found like: " + like);
-
         // 좋아요 삭제
         likeRepository.delete(like);
         entityManager.flush();
-        System.out.println("Like deleted successfully");
+
     }
 
 
