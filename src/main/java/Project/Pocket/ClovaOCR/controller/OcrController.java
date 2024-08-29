@@ -128,10 +128,11 @@ public class OcrController {
         requestBody.put("model", "gpt-3.5-turbo");
         requestBody.put("messages", List.of(
                 Map.of("role", "system", "content", "You are a helpful assistant."),
-                Map.of("role", "user", "content", "Extract the Ticket title, date, location, and seat from the following text:\n\n" + ocrText)
+                Map.of("role", "user", "content", "Extract the Ticket title, date (format it as 'yyyy.mm.dd'), location, and seat from the following text:\n\n" + ocrText)
         ));
         requestBody.put("max_tokens", 100);
         requestBody.put("temperature", 0.5);
+
 
         // 요청 헤더 설정
         HttpHeaders headers = new HttpHeaders();

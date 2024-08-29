@@ -120,4 +120,10 @@ public class ReviewController {
         return ResponseEntity.ok(reviews);
     }
 
+    @GetMapping("/sorted")
+    public ResponseEntity<List<ReviewDto>> getSortedReviews(){
+        List<ReviewDto> reviews = reviewService.getReviewsSortedByDate();
+        return ResponseEntity.ok(reviews);
+    }
+
 }

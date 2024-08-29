@@ -19,7 +19,7 @@ public class SignUpRequest {
         private final String bio;
         private final String phoneNumber;
         private MultipartFile profileImage;
-        private boolean isPrivate;
+
 
 
         //DTO -> Entity
@@ -31,7 +31,6 @@ public class SignUpRequest {
                     .password(encodedPassword)
                     .phoneNumber(phoneNumber)
                     .role(role)
-                    .isPrivate(isPrivate)
                     .build();
         }
     }

@@ -25,18 +25,25 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -53,12 +60,22 @@ public class ReviewService {
     private EntityManager entityManager;
     private final UserRepository userRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
+    // S3 클라이언트 및 버킷 정보
+    private final S3Client s3Client;
+    @Value("${aws.s3.bucket-name}")
+    private  String bucketName;
+    @Value("${aws.s3.region}")
+    private  String region;
+
 
 
 
 
     @Autowired
-    public ReviewService(@Lazy TicketCategoryService ticketCategoryService, ReviewRepository reviewRepository, ImageRepository imageRepository, @Lazy UserService userService, LikeRepository likeRepository, CustomImageRepository customImageRepository,TicketCategoryRepository ticketCategoryRepository, UserRepository userRepository){
+    public ReviewService(@Lazy TicketCategoryService ticketCategoryService, ReviewRepository reviewRepository, ImageRepository imageRepository, @Lazy UserService userService, LikeRepository likeRepository, CustomImageRepository customImageRepository,TicketCategoryRepository ticketCategoryRepository, UserRepository userRepository,
+                         @Value("${aws.s3.bucket-name}")String bucketName, @Value("${aws.s3.region}")String region,
+                         @Value("${aws.accessKeyId}") String accessKeyId, @Value("${aws.secretAccessKey}") String secretAccessKey){
+
         this.ticketCategoryService = ticketCategoryService;
         this.reviewRepository = reviewRepository;
         this.imageRepository = imageRepository;
@@ -68,43 +85,87 @@ public class ReviewService {
         this.imageDirectory = Paths.get("src", "main", "resources", "static", "images").toAbsolutePath();
         this.userRepository = userRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
+        this.bucketName = bucketName;
+        this.region = region;
+        AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
+        this.s3Client = S3Client.builder()
+                .region(Region.of(region))
+                .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
+                .build();
     }
 
 
-public String saveImage(MultipartFile imageFile) throws IOException {
-    if (imageFile == null || imageFile.isEmpty()) {
-        return ""; // 파일이 없을 경우 빈 문자열 반환
+
+    public String saveImage(MultipartFile imageFile) throws IOException {
+        if (imageFile == null || imageFile.isEmpty()) {
+            return ""; // 파일이 없을 경우 빈 문자열 반환
+        }
+
+        // 파일 이름 생성
+        String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
+        String contentType = getContentType(imageFile.getOriginalFilename());
+
+        try {
+            // S3에 파일 업로드
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(fileName)
+                    .contentType(contentType)
+                    .build();
+
+            PutObjectResponse response = s3Client.putObject(putObjectRequest,
+                    RequestBody.fromInputStream(imageFile.getInputStream(), imageFile.getSize()));
+
+            // 파일이 업로드된 S3 URL 반환
+            return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, fileName);
+        } catch (S3Exception e) {
+            throw new IOException("Failed to upload image to S3", e);
+        }
     }
 
-    // 파일 이름 생성
-    String fileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
 
-    // 전체 파일 경로 설정
-    Path imagePath = imageDirectory.resolve(fileName);
 
-    // 파일 저장
-    Files.copy(imageFile.getInputStream(), imagePath, StandardCopyOption.REPLACE_EXISTING);
-
-    // 반환할 URL 생성
-    String baseUrl = "http://localhost:8080";
-    return baseUrl + "/images/" + fileName;
-}
 
 
 
     public void deleteImageFile(String imageUrl) throws IOException {
+        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+            return; // 이미지 URL이 없으면 아무 것도 하지 않음
+        }
+
         // URL에서 파일 이름 추출
-        String fileName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+        String fileName = extractFileNameFromUrl(imageUrl);
 
-        // 전체 파일 경로 설정
-        Path imagePath = imageDirectory.resolve(fileName);
+        if (fileName == null || fileName.trim().isEmpty()) {
+            return; // 파일 이름이 유효하지 않으면 아무 것도 하지 않음
+        }
 
-        if (Files.exists(imagePath)) {
-            Files.delete(imagePath);
-        } else {
-            throw new IllegalArgumentException("Image not found");
+        try {
+            // S3에서 파일 삭제
+            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(fileName)
+                    .build();
+
+            s3Client.deleteObject(deleteObjectRequest);
+        } catch (S3Exception e) {
+            throw new IOException("Failed to delete image from S3", e);
         }
     }
+
+
+    // URL에서 파일 이름을 추출하는 메서드
+    private String extractFileNameFromUrl(String imageUrl) {
+        // URL을 디코딩하고 '/'로 분리
+        try {
+            String decodedUrl = java.net.URLDecoder.decode(imageUrl, "UTF-8");
+            return decodedUrl.substring(decodedUrl.lastIndexOf("/") + 1);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Failed to decode URL", e);
+        }
+    }
+
+
 
     @Transactional
     public Review createReview(ReviewRequest reviewRequest, MultipartFile customImageFile) {
@@ -127,6 +188,8 @@ public String saveImage(MultipartFile imageFile) throws IOException {
         review.setDate(reviewRequest.getDate());
         review.setTitle(reviewRequest.getTitle());
         review.setSeat(reviewRequest.getSeat());
+        review.setPrivate(reviewRequest.isPrivate());
+        review.setOcr(reviewRequest.isOcr());
         review.setUser(user);
 
         // 리뷰를 먼저 저장하여 reviewId를 확보
@@ -266,6 +329,8 @@ public String saveImage(MultipartFile imageFile) throws IOException {
         if(review.getCustomImage() != null){
             reviewDto.setCustomImageUrl(review.getCustomImage().getCustomImageUrl());
         }
+        reviewDto.setPrivate(review.isPrivate());
+        reviewDto.setOcr(review.isOcr());
 
         return reviewDto;
    }
@@ -273,6 +338,10 @@ public String saveImage(MultipartFile imageFile) throws IOException {
 
    public ReviewDto getReviewDto(Long reviewId, Long userId){
         Review review = reviewRepository.findById(reviewId).orElseThrow(() -> new IllegalArgumentException("Review not found"));
+        //비공개 리뷰인 경우 작성자만 조회 가능
+       if(review.isPrivate() && !review.getUser().getId().equals(userId)){
+           throw new IllegalArgumentException("No permission to view this review");
+       }
         User author =review.getUser();
         String authorNickname = author.getNickname();
         String authorProfileImageUrl = author.getProfileImage();
@@ -312,10 +381,35 @@ public String saveImage(MultipartFile imageFile) throws IOException {
         reviewRepository.save(review);
     }
 
-    public List<ReviewDto> searchReviews(String keyword, String searchType){
+//    public List<ReviewDto> searchReviews(String keyword, String searchType){
+//        Long currentUserId = userService.getCurrentUser().getId();
+//        List<Review> reviews = reviewRepository.searchByField(keyword,searchType);
+//        return reviews.stream().map(review -> getReviewDto(review.getId(), currentUserId)).collect(Collectors.toList());
+//    }
+
+    public List<ReviewDto> searchReviews(String keyword, String searchType) {
         Long currentUserId = userService.getCurrentUser().getId();
-        List<Review> reviews = reviewRepository.searchByField(keyword,searchType);
-        return reviews.stream().map(review -> getReviewDto(review.getId(), currentUserId)).collect(Collectors.toList());
+        List<Review> reviews;
+
+        if ("date".equalsIgnoreCase(searchType)) {
+            // 날짜 형식에 맞게 keyword를 LocalDate로 변환
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+            LocalDate date = LocalDate.parse(keyword, formatter);
+
+            // 해당 날짜에 맞는 시작일과 종료일 설정
+            LocalDate startDate = date;
+            LocalDate endDate = date;
+
+            // 특정 날짜에 해당하는 리뷰 검색
+            reviews = reviewRepository.searchByField(null, searchType, startDate, endDate);
+        } else {
+            // 다른 필드에 대한 검색
+            reviews = reviewRepository.searchByField(keyword, searchType, null, null);
+        }
+
+        return reviews.stream()
+                .map(review -> getReviewDto(review.getId(), currentUserId))
+                .collect(Collectors.toList());
     }
 
     //최신순으로 리뷰 조회
@@ -333,6 +427,31 @@ public String saveImage(MultipartFile imageFile) throws IOException {
         return reviews.stream().map(review -> getReviewDto(review.getId(), currentUserId)).collect(Collectors.toList());
     }
 
+    public List<ReviewDto>getReviewsSortedByDate(){
+        Long currentUserId = userService.getCurrentUser().getId();
+        List<Review> reviews = reviewRepository.findAllByOrderByDateDesc();
+        return reviews.stream().map(review -> getReviewDto(review.getId(),currentUserId)).collect(Collectors.toList());
+    }
+
+
+    // 파일 이름에 따라 Content-Type 반환
+    private String getContentType(String fileName) {
+        Map<String, String> extensionToContentType = new HashMap<>();
+        extensionToContentType.put("jpg", "image/jpeg");
+        extensionToContentType.put("jpeg", "image/jpeg");
+        extensionToContentType.put("png", "image/png");
+
+        String fileExtension = getFileExtension(fileName).toLowerCase();
+        return extensionToContentType.getOrDefault(fileExtension, "application/octet-stream");
+    }
+    // 파일 이름에서 확장자 추출
+    private String getFileExtension(String fileName) {
+        int lastDotIndex = fileName.lastIndexOf('.');
+        if (lastDotIndex >= 0 && lastDotIndex < fileName.length() - 1) {
+            return fileName.substring(lastDotIndex + 1);
+        }
+        return "";
+    }
 
 
 

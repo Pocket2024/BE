@@ -49,12 +49,11 @@ public class User implements Serializable {
     private UserRoleEnum role;
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Review> reviews = new HashSet<>();
-    @Column(nullable = false)
-    private boolean isPrivate;
+
 
 
     @Builder
-    public User(String email, String nickname, String password, String bio, String profileImage, String phoneNumber, UserRoleEnum role, boolean isPrivate) {
+    public User(String email, String nickname, String password, String bio, String profileImage, String phoneNumber, UserRoleEnum role) {
         this.email = email;
         this.nickname = nickname;
         this.password = password;
@@ -62,7 +61,7 @@ public class User implements Serializable {
         this.profileImage = profileImage;
         this.role = role;
         this.phoneNumber = phoneNumber;
-        this.isPrivate = isPrivate;
+
 
 
     }
@@ -76,7 +75,6 @@ public class User implements Serializable {
         userDto.setBio(this.bio);
         userDto.setEmail(this.email);
         userDto.setPhoneNumber(this.phoneNumber);
-        userDto.setPrivate(isPrivate);
         return userDto;
 
     }

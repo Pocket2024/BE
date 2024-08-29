@@ -20,7 +20,6 @@ public class UserDto {
     private int reviewCount;
     private Long featuredReviewId;
     private boolean FollowedByCurrentUser;
-    private boolean isPrivate;
 
 
 

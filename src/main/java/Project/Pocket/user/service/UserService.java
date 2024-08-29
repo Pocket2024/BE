@@ -14,16 +14,11 @@ import Project.Pocket.security.exception.ExceptionStatus;
 import Project.Pocket.security.jwt.JwtProvider;
 import Project.Pocket.security.service.UserDetailsImpl;
 import Project.Pocket.user.dto.*;
-//import Project.Pocket.user.dto.UserUpdateRequest;
 import Project.Pocket.user.entity.User;
 import Project.Pocket.user.entity.UserRepository;
 import Project.Pocket.user.entity.UserRoleEnum;
-//import Project.Pocket.user.exception.UserNotFoundException;
 import Project.Pocket.user.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
-
-
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
@@ -33,68 +28,107 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 
 import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class UserService {
+    public class UserService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtProvider jwtProvider;
-    private final RedisDao redisDao;
-    private final FollowRepository followRepository;
-    private final TicketCategoryRepository ticketCategoryRepository;
-    private final ReviewRepository reviewRepository;
-    private final ReviewService reviewService;
+        private final UserRepository userRepository;
+        private final PasswordEncoder passwordEncoder;
+        private final JwtProvider jwtProvider;
+        private final RedisDao redisDao;
+        private final FollowRepository followRepository;
+        private final TicketCategoryRepository ticketCategoryRepository;
+        private final ReviewRepository reviewRepository;
+        private final ReviewService reviewService;
+        @Value("${aws.s3.bucket-name}")
+        private  String bucketName;
+        @Value("${aws.s3.region}")
+        private  String region;
+        private final S3Client s3Client;
+
+    // 생성자 주입
+    @Autowired
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtProvider jwtProvider,RedisDao redisDao, FollowRepository followRepository,TicketCategoryRepository ticketCategoryRepository,
+                       ReviewRepository reviewRepository, ReviewService reviewService,  @Value("${aws.s3.bucket-name}")String bucketName,  @Value("${aws.s3.region}")String region,@Value("${aws.accessKeyId}") String accessKeyId,
+                       @Value("${aws.secretAccessKey}") String secretAccessKey){
+
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtProvider = jwtProvider;
+        this.redisDao = redisDao;
+        this.followRepository = followRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.reviewRepository = reviewRepository;
+        this.reviewService = reviewService;
+        this.bucketName = bucketName;
+        this.region = region;
+        AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
+        this.s3Client = S3Client.builder()
+                .region(Region.of(region))
+                .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
+                .build();
+    }
 
 
 
 
 
 
-        @Transactional
-        public ResponseEntity signup(@Validated  SignUpRequest signUpRequest, HttpServletRequest request) {
-            String email = signUpRequest.getEmail();
-            String nickname = signUpRequest.getNickName();
-            String password = passwordEncoder.encode(signUpRequest.getPassword());
 
 
-            //닉네임 중복 확인
-            Optional<User> findNickname = userRepository.findByNickname(nickname);
-            if (findNickname.isPresent()) {
-                throw new CustomException(ExceptionStatus.DUPLICATED_NICKNAME);
+
+    @Transactional
+            public ResponseEntity signup(@Validated  SignUpRequest signUpRequest, HttpServletRequest request) {
+                String email = signUpRequest.getEmail();
+                String nickname = signUpRequest.getNickName();
+                String password = passwordEncoder.encode(signUpRequest.getPassword());
+
+
+                //닉네임 중복 확인
+                Optional<User> findNickname = userRepository.findByNickname(nickname);
+                if (findNickname.isPresent()) {
+                    throw new CustomException(ExceptionStatus.DUPLICATED_NICKNAME);
+                }
+                // 이메일 중복 확인
+                Optional<User> findEmail = userRepository.findByEmail(email);
+                if (findEmail.isPresent()) {
+                    throw new CustomException(ExceptionStatus.DUPLICATED_EMAIL);
+                }
+                UserRoleEnum role = UserRoleEnum.MEMBER;
+                User user = signUpRequest.toEntity(role, password);
+                // 기본 프로필 이미지 설정 (S3 URL로)
+                String defaultProfileImageUrl = String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, "default.png");
+                user.setProfileImage(defaultProfileImageUrl);
+
+
+                userRepository.save(user);
+                UserDto userDto = user.toDto();
+                return ResponseEntity.ok(userDto);
             }
-            // 이메일 중복 확인
-            Optional<User> findEmail = userRepository.findByEmail(email);
-            if (findEmail.isPresent()) {
-                throw new CustomException(ExceptionStatus.DUPLICATED_EMAIL);
-            }
-            UserRoleEnum role = UserRoleEnum.MEMBER;
-            User user = signUpRequest.toEntity(role, password);
-            // 기본 프로필 이미지 설정
-            String baseUrl = String.format("%s://%s:%d", request.getScheme(), request.getServerName(), request.getServerPort());
-            String defaultProfileImageUrl = baseUrl + "/images/default.png";
-            user.setProfileImage(defaultProfileImageUrl);
-
-            userRepository.save(user);
-            UserDto userDto = user.toDto();
-            return ResponseEntity.ok(userDto);
-        }
 
 
      // 로그인 반환값으로 user를 userResponseDto 담아 반환하고  컨트롤러에서 반환된 객체를 이용하여 토큰 발행한다.
@@ -138,21 +172,61 @@ public class UserService {
     }
 
     //파일 저장 메서드
-    public String saveProfileImage(MultipartFile file, HttpServletRequest request) throws IOException{
-        if(file.isEmpty()){
+//    public String saveProfileImage(MultipartFile file, HttpServletRequest request) throws IOException{
+//        if(file.isEmpty()){
+//            throw new IllegalArgumentException("Cannot upload an empty file");
+//        }
+//
+//        //파일 이름과 경로 설정
+//        String fileName = file.getOriginalFilename();
+//        Path filePath = Paths.get("src/main/resources/static/images", fileName);
+//
+//        //파일 저장
+//        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+//
+//        String baseUrl = String.format("%s://%s:%d", request.getScheme(), request.getServerName(), request.getServerPort());
+//        return baseUrl + "/images/" + fileName;
+//    }
+
+
+    public String saveProfileImage(MultipartFile file) throws IOException {
+        if (file.isEmpty()) {
             throw new IllegalArgumentException("Cannot upload an empty file");
         }
 
-        //파일 이름과 경로 설정
+        // 파일 이름 생성 및 S3에서의 키 설정
         String fileName = file.getOriginalFilename();
-        Path filePath = Paths.get("src/main/resources/static/images", fileName);
+        String contentType = getContentType(file.getOriginalFilename());
+        if (fileName == null) {
+            throw new IllegalArgumentException("File name cannot be null");
+        }
 
-        //파일 저장
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+        String key = "profiles/" + fileName; // S3 버킷 내의 저장 경로
 
-        String baseUrl = String.format("%s://%s:%d", request.getScheme(), request.getServerName(), request.getServerPort());
-        return baseUrl + "/images/" + fileName;
+        // S3에 파일 저장
+        try (InputStream inputStream = file.getInputStream()) {
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .contentType(contentType)
+                    .build();
+
+            s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, file.getSize()));
+        } catch (S3Exception e) {
+            throw new IOException("Failed to upload file to S3", e);
+        }
+
+        // S3 URL 생성
+        String s3Url = String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, key);
+        return s3Url;
     }
+
+
+
+
+
+
+
 
 //    //회원 정보 수정
     public UserDto updateUser(Long userId, UserUpdateRequest request, HttpServletRequest httprequest) throws UserNotFoundException,IOException {
@@ -177,9 +251,9 @@ public class UserService {
 
 
         if (request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
-            String profileImagePath = saveProfileImage(request.getProfileImage(),httprequest );
-            user.setProfileImage(profileImagePath);
-     }
+            String profileImageUrl = saveProfileImage(request.getProfileImage());
+            user.setProfileImage(profileImageUrl);
+        }
         //수정된 정보 저장
         userRepository.save(user);
         updateSecurityContext(user);
@@ -228,6 +302,26 @@ public class UserService {
 
         return userDto;
 
+    }
+
+    // 파일 이름에 따라 Content-Type 반환
+    private String getContentType(String fileName) {
+        Map<String, String> extensionToContentType = new HashMap<>();
+        extensionToContentType.put("jpg", "image/jpeg");
+        extensionToContentType.put("jpeg", "image/jpeg");
+        extensionToContentType.put("png", "image/png");
+
+        String fileExtension = getFileExtension(fileName).toLowerCase();
+        return extensionToContentType.getOrDefault(fileExtension, "application/octet-stream");
+    }
+
+    // 파일 이름에서 확장자 추출
+    private String getFileExtension(String fileName) {
+        int lastDotIndex = fileName.lastIndexOf('.');
+        if (lastDotIndex >= 0 && lastDotIndex < fileName.length() - 1) {
+            return fileName.substring(lastDotIndex + 1);
+        }
+        return "";
     }
 
 

@@ -6,14 +6,18 @@ import Project.Pocket.Like.entity.Like;
 import Project.Pocket.Review.dto.ReviewDto;
 import Project.Pocket.TicketCategory.entity.TicketCategory;
 import Project.Pocket.user.entity.User;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.format.annotation.DateTimeFormat;
 
 
 import javax.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -38,8 +42,8 @@ public class Review {
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false)
-    private String date;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy.MM.dd")
+    private LocalDate date;
 
     @Column(nullable = false)
     private String location;
@@ -52,6 +56,10 @@ public class Review {
     private String content;
 
     private boolean isFeatured;
+
+    private boolean isPrivate;
+
+    private boolean isOcr;
 
     @CreatedDate
     private LocalDateTime createdAt;

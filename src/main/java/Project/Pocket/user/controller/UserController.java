@@ -116,11 +116,7 @@ public class UserController {
         if (currentUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No user found");
         }
-        // 비공개 계정인지 확인하고, 현재 로그인한 사용자가 해당 사용자인지 확인
-        User user = userService.getUserById(userId);
-        if (user.isPrivate() && !user.getId().equals(currentUser.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("This is private profile");
-        }
+
         //사용자 정보 조회 후 UserDTO 반환
         UserDto userDetails = userService.getUserDetails(userId);
         return ResponseEntity.ok(userDetails);
@@ -133,7 +129,7 @@ public class UserController {
         System.out.println("Profile Image = " + request.getProfileImage());
         User currentUser = userService.getCurrentUser();
 
-        // 현재 로그인한 사용자의 권한을 확인하고 수정하려는 사용자 정보의 소유자인지 검증할 수 있습니다.
+        // 현재 로그인한 사용자의 권한을 확인하고 수정하려는 사용자 정보의 소유자인지 검증
         if (currentUser == null || !currentUser.getId().equals(userId)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
