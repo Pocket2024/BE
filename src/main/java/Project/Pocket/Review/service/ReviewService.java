@@ -345,6 +345,7 @@ public class ReviewService {
         User author =review.getUser();
         String authorNickname = author.getNickname();
         String authorProfileImageUrl = author.getProfileImage();
+        Long authorId = author.getId();
         //TicketCategory -> DTO
         TicketCategoryDto ticketCategoryDto = ticketCategoryService.getTicketCategoryDtoById(review.getTicketCategory().getId());
        //이미지 -> DTO
@@ -358,13 +359,14 @@ public class ReviewService {
         //DTO에 작성자 닉네임, 프로필이미지 추가 설정
         reviewDto.setAuthorNickname(authorNickname);
         reviewDto.setAuthorProfileImageUrl(authorProfileImageUrl);
+        reviewDto.setAuthorId(authorId);
 
         return reviewDto;
 
    }
 
     public List<ReviewDto> getReviewsByCategory(Long categoryId, Long userId){
-        List<Review> reviews = reviewRepository.findByTicketCategoryId(categoryId);
+        List<Review> reviews = reviewRepository.findByTicketCategoryIdAndIsPrivateFalse(categoryId);
         return reviews.stream().map(review -> getReviewDto(review.getId(), userId)).collect(Collectors.toList());
     }
 
@@ -381,11 +383,7 @@ public class ReviewService {
         reviewRepository.save(review);
     }
 
-//    public List<ReviewDto> searchReviews(String keyword, String searchType){
-//        Long currentUserId = userService.getCurrentUser().getId();
-//        List<Review> reviews = reviewRepository.searchByField(keyword,searchType);
-//        return reviews.stream().map(review -> getReviewDto(review.getId(), currentUserId)).collect(Collectors.toList());
-//    }
+
 
     public List<ReviewDto> searchReviews(String keyword, String searchType) {
         Long currentUserId = userService.getCurrentUser().getId();
@@ -416,14 +414,14 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public List<ReviewDto> getReviewsByLatest(){
         Long currentUserId = userService.getCurrentUser().getId();
-        List<Review> reviews = reviewRepository.findAllByOrderByCreatedAtDesc();
+        List<Review> reviews = reviewRepository.findAllByIsPrivateFalseOrderByCreatedAtDesc();
         return reviews.stream().map(review -> getReviewDto(review.getId(), currentUserId)).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<ReviewDto> getReviewsByLikeCount(){
         Long currentUserId = userService.getCurrentUser().getId();
-        List<Review> reviews = reviewRepository.findAllByOrderByLikeCountDesc();
+        List<Review> reviews = reviewRepository.findReviewsByLikeCountAndIsPrivateFalse();
         return reviews.stream().map(review -> getReviewDto(review.getId(), currentUserId)).collect(Collectors.toList());
     }
 

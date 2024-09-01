@@ -14,11 +14,13 @@ import java.util.Optional;
 public interface ReviewRepository extends JpaRepository<Review, Long> {
     int countByUserId(Long userId);
     Optional<Review> findByUserIdAndIsFeaturedTrue(Long userId);
-    List<Review> findByTicketCategoryId(Long ticketCategoryId);
+    List<Review> findByTicketCategoryIdAndIsPrivateFalse(Long ticketCategoryId);
     int countByTicketCategory(TicketCategory ticketCategory);
-    List<Review> findAllByOrderByCreatedAtDesc();
-    @Query("SELECT r FROM Review r LEFT JOIN r.likes l GROUP BY r ORDER BY COUNT(l) DESC")
-    List<Review> findAllByOrderByLikeCountDesc();
+    List<Review> findAllByIsPrivateFalseOrderByCreatedAtDesc();
+
+    @Query("SELECT r FROM Review r LEFT JOIN r.likes l WHERE r.isPrivate = false GROUP BY r ORDER BY COUNT(l) DESC")
+    List<Review> findReviewsByLikeCountAndIsPrivateFalse();
+
     List<Review> findAllByOrderByDateDesc();
 
 

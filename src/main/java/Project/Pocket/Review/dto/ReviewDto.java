@@ -31,6 +31,7 @@ public class ReviewDto {
     private String customImageUrl;
     private String authorNickname;
     private String authorProfileImageUrl;
+    private Long authorId;
 
 
 }
