@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface ReviewRepository extends JpaRepository<Review, Long> {
     int countByUserId(Long userId);
     Optional<Review> findByUserIdAndIsFeaturedTrue(Long userId);
-    List<Review> findByTicketCategoryIdAndIsPrivateFalse(Long ticketCategoryId);
+    List<Review> findByTicketCategoryId(Long ticketCategoryId);
     int countByTicketCategory(TicketCategory ticketCategory);
     List<Review> findAllByIsPrivateFalseOrderByCreatedAtDesc();
 

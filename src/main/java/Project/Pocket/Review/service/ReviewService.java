@@ -366,8 +366,10 @@ public class ReviewService {
    }
 
     public List<ReviewDto> getReviewsByCategory(Long categoryId, Long userId){
-        List<Review> reviews = reviewRepository.findByTicketCategoryIdAndIsPrivateFalse(categoryId);
-        return reviews.stream().map(review -> getReviewDto(review.getId(), userId)).collect(Collectors.toList());
+        List<Review> reviews = reviewRepository.findByTicketCategoryId(categoryId);
+        List<Review> filteredReviews = reviews.stream().filter(review ->
+                !review.isPrivate() || review.getUser().getId().equals(userId)).collect(Collectors.toList());
+        return filteredReviews.stream().map(review -> getReviewDto(review.getId(), userId)).collect(Collectors.toList());
     }
 
     public void setFeaturedReview(Long userId, Long reviewId){
