@@ -62,6 +62,7 @@ public class Review {
     private boolean isOcr;
 
     @CreatedDate
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -3,6 +3,7 @@ package Project.Pocket.Review.controller;
 
 import Project.Pocket.Image.service.ImageService;
 import Project.Pocket.Like.service.LikeService;
+import Project.Pocket.Review.dto.ReviewDateDto;
 import Project.Pocket.Review.dto.ReviewDto;
 import Project.Pocket.Review.dto.ReviewRequest;
 
@@ -23,7 +24,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -124,6 +128,25 @@ public class ReviewController {
     public ResponseEntity<List<ReviewDto>> getSortedReviews(){
         List<ReviewDto> reviews = reviewService.getReviewsSortedByDate();
         return ResponseEntity.ok(reviews);
+    }
+
+    @GetMapping("/dates")
+    public List<ReviewDateDto> getAllReviewDates(@RequestParam Long userId) {
+        List<LocalDate> dates = reviewService.getAllReviewDates(userId);
+        // 날짜 리스트를 ReviewDateDto로 변환
+        return dates.stream()
+                .map(date -> {
+                    ReviewDateDto dto = new ReviewDateDto();
+                    dto.setDate(date);
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/byDate")
+    public ResponseEntity<Map<LocalDate, List<ReviewDto>>>getReviewsByDate(@RequestParam Long userId){
+        Map<LocalDate, List<ReviewDto>> reviewsByDate = reviewService.getReviewsByDate(userId);
+        return ResponseEntity.ok(reviewsByDate);
     }
 
 }

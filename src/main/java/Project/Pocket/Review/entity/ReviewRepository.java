@@ -7,16 +7,22 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
+
+    List<Review> findByUserId(Long userId);
     int countByUserId(Long userId);
     Optional<Review> findByUserIdAndIsFeaturedTrue(Long userId);
     List<Review> findByTicketCategoryId(Long ticketCategoryId);
     int countByTicketCategory(TicketCategory ticketCategory);
     List<Review> findAllByIsPrivateFalseOrderByCreatedAtDesc();
+    @Query("SELECT r.date FROM Review  r WHERE r.user.id = :userId")
+    List<LocalDate> findReviewDatesByUserId(@Param("userId") Long userId);
 
     @Query("SELECT r FROM Review r LEFT JOIN r.likes l WHERE r.isPrivate = false GROUP BY r ORDER BY COUNT(l) DESC")
     List<Review> findReviewsByLikeCountAndIsPrivateFalse();

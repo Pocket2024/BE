@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -63,18 +64,15 @@ public class ReviewService {
     // S3 클라이언트 및 버킷 정보
     private final S3Client s3Client;
     @Value("${aws.s3.bucket-name}")
-    private  String bucketName;
+    private String bucketName;
     @Value("${aws.s3.region}")
-    private  String region;
-
-
-
+    private String region;
 
 
     @Autowired
-    public ReviewService(@Lazy TicketCategoryService ticketCategoryService, ReviewRepository reviewRepository, ImageRepository imageRepository, @Lazy UserService userService, LikeRepository likeRepository, CustomImageRepository customImageRepository,TicketCategoryRepository ticketCategoryRepository, UserRepository userRepository,
-                         @Value("${aws.s3.bucket-name}")String bucketName, @Value("${aws.s3.region}")String region,
-                         @Value("${aws.accessKeyId}") String accessKeyId, @Value("${aws.secretAccessKey}") String secretAccessKey){
+    public ReviewService(@Lazy TicketCategoryService ticketCategoryService, ReviewRepository reviewRepository, ImageRepository imageRepository, @Lazy UserService userService, LikeRepository likeRepository, CustomImageRepository customImageRepository, TicketCategoryRepository ticketCategoryRepository, UserRepository userRepository,
+                         @Value("${aws.s3.bucket-name}") String bucketName, @Value("${aws.s3.region}") String region,
+                         @Value("${aws.accessKeyId}") String accessKeyId, @Value("${aws.secretAccessKey}") String secretAccessKey) {
 
         this.ticketCategoryService = ticketCategoryService;
         this.reviewRepository = reviewRepository;
@@ -93,7 +91,6 @@ public class ReviewService {
                 .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
                 .build();
     }
-
 
 
     public String saveImage(MultipartFile imageFile) throws IOException {
@@ -122,10 +119,6 @@ public class ReviewService {
             throw new IOException("Failed to upload image to S3", e);
         }
     }
-
-
-
-
 
 
     public void deleteImageFile(String imageUrl) throws IOException {
@@ -164,7 +157,6 @@ public class ReviewService {
             throw new RuntimeException("Failed to decode URL", e);
         }
     }
-
 
 
     @Transactional
@@ -298,23 +290,20 @@ public class ReviewService {
     }
 
 
-
-
-
     @Transactional(readOnly = true)
-    public int getReviewLikesCount(Long reviewId){
+    public int getReviewLikesCount(Long reviewId) {
         Review review = reviewRepository.findById(reviewId).orElseThrow(() -> new IllegalArgumentException("Review with Id " + reviewId + " not found!"));
         return review.getLikeCount();
     }
 
     @Transactional(readOnly = true)
-    public List<User> getReviewLikedUsers(Long reviewId){
+    public List<User> getReviewLikedUsers(Long reviewId) {
         Review review = reviewRepository.findById(reviewId).orElseThrow(() -> new IllegalArgumentException("Review with id " + reviewId + " not found!"));
         return review.getLikedUsers();
     }
 
 
-   public static ReviewDto mapToDto(Review review, TicketCategoryDto ticketCategoryDto, List<ImageDto> imageDtos, boolean likedByCurrentUser){
+    public static ReviewDto mapToDto(Review review, TicketCategoryDto ticketCategoryDto, List<ImageDto> imageDtos, boolean likedByCurrentUser) {
         ReviewDto reviewDto = new ReviewDto();
         reviewDto.setId(review.getId());
         reviewDto.setContent(review.getContent());
@@ -326,36 +315,36 @@ public class ReviewService {
         reviewDto.setSeat(review.getSeat());
         reviewDto.setTitle(review.getTitle());
         reviewDto.setLocation(review.getLocation());
-        if(review.getCustomImage() != null){
+        if (review.getCustomImage() != null) {
             reviewDto.setCustomImageUrl(review.getCustomImage().getCustomImageUrl());
         }
         reviewDto.setPrivate(review.isPrivate());
         reviewDto.setOcr(review.isOcr());
 
         return reviewDto;
-   }
+    }
 
 
-   public ReviewDto getReviewDto(Long reviewId, Long userId){
+    public ReviewDto getReviewDto(Long reviewId, Long userId) {
         Review review = reviewRepository.findById(reviewId).orElseThrow(() -> new IllegalArgumentException("Review not found"));
         //비공개 리뷰인 경우 작성자만 조회 가능
-       if(review.isPrivate() && !review.getUser().getId().equals(userId)){
-           throw new IllegalArgumentException("No permission to view this review");
-       }
-        User author =review.getUser();
+        if (review.isPrivate() && !review.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("No permission to view this review");
+        }
+        User author = review.getUser();
         String authorNickname = author.getNickname();
         String authorProfileImageUrl = author.getProfileImage();
         Long authorId = author.getId();
         //TicketCategory -> DTO
         TicketCategoryDto ticketCategoryDto = ticketCategoryService.getTicketCategoryDtoById(review.getTicketCategory().getId());
-       //이미지 -> DTO
+        //이미지 -> DTO
         List<ImageDto> imageDtos = review.getImages().stream()
-               .map(ImageService::mapToDto)
-               .collect(Collectors.toList());
+                .map(ImageService::mapToDto)
+                .collect(Collectors.toList());
 
         boolean likedByCurrentUser = likeRepository.existsByReviewIdAndUserId(reviewId, userId);
         //review -> DTO
-        ReviewDto reviewDto =  mapToDto(review, ticketCategoryDto, imageDtos, likedByCurrentUser);
+        ReviewDto reviewDto = mapToDto(review, ticketCategoryDto, imageDtos, likedByCurrentUser);
         //DTO에 작성자 닉네임, 프로필이미지 추가 설정
         reviewDto.setAuthorNickname(authorNickname);
         reviewDto.setAuthorProfileImageUrl(authorProfileImageUrl);
@@ -363,16 +352,16 @@ public class ReviewService {
 
         return reviewDto;
 
-   }
+    }
 
-    public List<ReviewDto> getReviewsByCategory(Long categoryId, Long userId){
+    public List<ReviewDto> getReviewsByCategory(Long categoryId, Long userId) {
         List<Review> reviews = reviewRepository.findByTicketCategoryId(categoryId);
         List<Review> filteredReviews = reviews.stream().filter(review ->
                 !review.isPrivate() || review.getUser().getId().equals(userId)).collect(Collectors.toList());
         return filteredReviews.stream().map(review -> getReviewDto(review.getId(), userId)).collect(Collectors.toList());
     }
 
-    public void setFeaturedReview(Long userId, Long reviewId){
+    public void setFeaturedReview(Long userId, Long reviewId) {
         //대표 리뷰가 이미 있다면 해제
         reviewRepository.findByUserIdAndIsFeaturedTrue(userId).ifPresent(existingFeaturedReview -> {
             existingFeaturedReview.setFeatured(false);
@@ -384,7 +373,6 @@ public class ReviewService {
         review.setFeatured(true);
         reviewRepository.save(review);
     }
-
 
 
     public List<ReviewDto> searchReviews(String keyword, String searchType) {
@@ -414,23 +402,23 @@ public class ReviewService {
 
     //최신순으로 리뷰 조회
     @Transactional(readOnly = true)
-    public List<ReviewDto> getReviewsByLatest(){
+    public List<ReviewDto> getReviewsByLatest() {
         Long currentUserId = userService.getCurrentUser().getId();
         List<Review> reviews = reviewRepository.findAllByIsPrivateFalseOrderByCreatedAtDesc();
         return reviews.stream().map(review -> getReviewDto(review.getId(), currentUserId)).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public List<ReviewDto> getReviewsByLikeCount(){
+    public List<ReviewDto> getReviewsByLikeCount() {
         Long currentUserId = userService.getCurrentUser().getId();
         List<Review> reviews = reviewRepository.findReviewsByLikeCountAndIsPrivateFalse();
         return reviews.stream().map(review -> getReviewDto(review.getId(), currentUserId)).collect(Collectors.toList());
     }
 
-    public List<ReviewDto>getReviewsSortedByDate(){
+    public List<ReviewDto> getReviewsSortedByDate() {
         Long currentUserId = userService.getCurrentUser().getId();
         List<Review> reviews = reviewRepository.findAllByOrderByDateDesc();
-        return reviews.stream().map(review -> getReviewDto(review.getId(),currentUserId)).collect(Collectors.toList());
+        return reviews.stream().map(review -> getReviewDto(review.getId(), currentUserId)).collect(Collectors.toList());
     }
 
 
@@ -444,6 +432,7 @@ public class ReviewService {
         String fileExtension = getFileExtension(fileName).toLowerCase();
         return extensionToContentType.getOrDefault(fileExtension, "application/octet-stream");
     }
+
     // 파일 이름에서 확장자 추출
     private String getFileExtension(String fileName) {
         int lastDotIndex = fileName.lastIndexOf('.');
@@ -453,11 +442,23 @@ public class ReviewService {
         return "";
     }
 
+    public List<LocalDate> getAllReviewDates(Long userId) {
+
+        return reviewRepository.findReviewDatesByUserId(userId);
+    }
+
+    public Map<LocalDate, List<ReviewDto>> getReviewsByDate(Long userId) {
+        // 해당 유저가 작성한 리뷰 조회
+        List<Review> reviews = reviewRepository.findByUserId(userId);
+        // 리뷰들을 날짜별로 그룹화
+        Map<LocalDate, List<ReviewDto>> reviewsByDate = reviews.stream().collect(Collectors.groupingBy(
+                review -> review.getCreatedAt().toLocalDate(),
+                Collectors.mapping(review -> {
+                    return getReviewDto(review.getId(), userId);
+                    }, Collectors.toList())
+        ));
 
 
-
-
-
-
-
+        return reviewsByDate;
+    }
 }
