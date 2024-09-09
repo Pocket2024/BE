@@ -17,6 +17,7 @@ import Project.Pocket.user.entity.User;
 import Project.Pocket.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.validation.annotation.Validated;
@@ -131,7 +132,7 @@ public class ReviewController {
     }
 
     @GetMapping("/dates")
-    public List<ReviewDateDto> getAllReviewDates(@RequestParam Long userId) {
+    public List<ReviewDateDto> getAllReviewDates( @RequestParam Long userId) {
         List<LocalDate> dates = reviewService.getAllReviewDates(userId);
         // 날짜 리스트를 ReviewDateDto로 변환
         return dates.stream()
@@ -143,9 +144,9 @@ public class ReviewController {
                 .collect(Collectors.toList());
     }
 
-    @GetMapping("/byDate")
-    public ResponseEntity<Map<LocalDate, List<ReviewDto>>>getReviewsByDate(@RequestParam Long userId){
-        Map<LocalDate, List<ReviewDto>> reviewsByDate = reviewService.getReviewsByDate(userId);
+    @GetMapping("/bydates")
+    public ResponseEntity<List<ReviewDto>> getReviewsByDate(@RequestParam Long userId, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        List<ReviewDto> reviewsByDate = reviewService.getReviewsByDate(userId, date);
         return ResponseEntity.ok(reviewsByDate);
     }
 

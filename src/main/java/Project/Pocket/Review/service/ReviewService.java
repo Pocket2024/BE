@@ -447,17 +447,14 @@ public class ReviewService {
         return reviewRepository.findReviewDatesByUserId(userId);
     }
 
-    public Map<LocalDate, List<ReviewDto>> getReviewsByDate(Long userId) {
-        // 해당 유저가 작성한 리뷰 조회
+    public List<ReviewDto> getReviewsByDate(Long userId, LocalDate date) {
         List<Review> reviews = reviewRepository.findByUserId(userId);
-        // 리뷰들을 날짜별로 그룹화
-        Map<LocalDate, List<ReviewDto>> reviewsByDate = reviews.stream().collect(Collectors.groupingBy(
-                review -> review.getCreatedAt().toLocalDate(),
-                Collectors.mapping(review -> {
-                    return getReviewDto(review.getId(), userId);
-                    }, Collectors.toList())
-        ));
 
+        // 주어진 날짜에 해당하는 리뷰만 필터링
+       List<ReviewDto> reviewsByDate = reviews.stream()
+               .filter(review -> review.getDate().equals(date))
+               .map(review -> getReviewDto(review.getId(), userId))
+               .collect(Collectors.toList());
 
         return reviewsByDate;
     }
