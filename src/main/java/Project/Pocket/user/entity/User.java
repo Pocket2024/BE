@@ -4,6 +4,7 @@ package Project.Pocket.user.entity;
 import Project.Pocket.Review.entity.Review;
 import Project.Pocket.follow.entity.Follow;
 import Project.Pocket.user.dto.UserDto;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 
@@ -48,6 +49,7 @@ public class User implements Serializable {
     @Enumerated(value = EnumType.STRING)
     private UserRoleEnum role;
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<Review> reviews = new HashSet<>();
 
 

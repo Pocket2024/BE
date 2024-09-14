@@ -24,6 +24,7 @@ public class TicketCategory {
     private Long id;
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
@@ -35,6 +36,7 @@ public class TicketCategory {
 
 
    @OneToMany(mappedBy = "ticketCategory", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+   @JsonIgnore
    private List<Review> reviews = new ArrayList<>();
 
 

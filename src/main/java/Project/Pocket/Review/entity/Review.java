@@ -7,6 +7,7 @@ import Project.Pocket.Review.dto.ReviewDto;
 import Project.Pocket.TicketCategory.entity.TicketCategory;
 import Project.Pocket.user.entity.User;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
@@ -32,6 +33,7 @@ public class Review {
     private Long id;
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "ticket_category_id", nullable = false)
     private TicketCategory ticketCategory;
 
