@@ -7,10 +7,12 @@ import Project.Pocket.Review.dto.ReviewDateDto;
 import Project.Pocket.Review.dto.ReviewDto;
 import Project.Pocket.Review.dto.ReviewRequest;
 
+import Project.Pocket.Review.dto.ReviewTranslateDto;
 import Project.Pocket.Review.entity.Review;
 import Project.Pocket.Review.service.ReviewService;
 
 import Project.Pocket.TicketCategory.service.TicketCategoryService;
+import Project.Pocket.chatbot.service.GPTService;
 import Project.Pocket.user.dto.UserDto;
 import Project.Pocket.user.entity.User;
 
@@ -39,14 +41,16 @@ public class ReviewController {
     private final ImageService imageService;
     private final LikeService likeService;
     private final UserService userService;
+    private final GPTService gptService;
 
     @Autowired
-    public ReviewController(ReviewService reviewService, TicketCategoryService ticketCategoryService,ImageService imageService, LikeService likeService, UserService userService) {
+    public ReviewController(ReviewService reviewService, TicketCategoryService ticketCategoryService,ImageService imageService, LikeService likeService, UserService userService, GPTService gptService) {
         this.reviewService = reviewService;
         this.ticketCategoryService = ticketCategoryService;
         this.imageService = imageService;
         this.likeService = likeService;
         this.userService = userService;
+        this.gptService = gptService;
 
     }
 
@@ -149,5 +153,13 @@ public class ReviewController {
         List<ReviewDto> reviewsByDate = reviewService.getReviewsByDate(userId, date);
         return ResponseEntity.ok(reviewsByDate);
     }
+
+    @PostMapping("/translate")
+    public ResponseEntity<ReviewTranslateDto> translateReview(@RequestBody ReviewTranslateDto reviewTranslateDto) {
+        ReviewTranslateDto translatedReview = gptService.translateReview(reviewTranslateDto);
+        return ResponseEntity.ok(translatedReview);
+    }
+
+
 
 }

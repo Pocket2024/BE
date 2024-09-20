@@ -26,7 +26,7 @@ public class ChatbotService {
                 Map.of("role", "system", "content", "You are a helpful assistant"),
                 Map.of("role", "user","content", prompt)
         ));
-        requestBody.put("max_tokens", 100);
+        requestBody.put("max_tokens", 1000);
         // 요청 헤더 설정
         org.springframework.http.HttpHeaders headers = new HttpHeaders();
        headers.set("Authorization", "Bearer " + gptApiKey);
