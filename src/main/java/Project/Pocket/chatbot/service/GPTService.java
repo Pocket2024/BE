@@ -31,11 +31,13 @@ public class GPTService {
         String translatedContent = callGptApi(reviewDto.getContent());
         String translatedTitle = callGptApi(reviewDto.getTitle());
         String translatedSeat = callGptApi(reviewDto.getSeat());
+        String translatedLocation = callGptApi(reviewDto.getLocation());
 
         // 번역된 데이터를 ReviewTranslateDto에 설정
         reviewDto.setContent(translatedContent);
         reviewDto.setTitle(translatedTitle);
         reviewDto.setSeat(translatedSeat);
+        reviewDto.setLocation(translatedLocation);
 
         return reviewDto;
     }

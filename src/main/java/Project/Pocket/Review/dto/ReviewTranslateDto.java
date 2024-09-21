@@ -9,5 +9,6 @@ public class ReviewTranslateDto {
     private String content;
     private String title;
     private String seat;
+    private String location;
 
 }
