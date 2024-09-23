@@ -32,8 +32,8 @@ public class OcrController {
     @Value("${gpt.api.key}")
     private String gptApiKey;
 
-    @PostMapping("/upload/ocr")
-    public ResponseEntity<Map<String, String>> uploadFileForOcr(@RequestParam("file") MultipartFile file) {
+    @PostMapping("/upload")
+    public ResponseEntity<Map<String, String>> uploadFile(@RequestParam("file") MultipartFile file) {
         String ocrResponse;
         try {
             // 1. 클로바 OCR API 호출
@@ -47,8 +47,11 @@ public class OcrController {
                     .body(Map.of("error", "Error processing OCR: " + e.getMessage()));
         }
 
-        // 2. OCR 결과 반환 (GPT 호출 없이)
-        return ResponseEntity.ok(Map.of("ocrText", ocrResponse));
+        // 2. ChatGPT API 호출하여 공연 정보 추출
+        Map<String, String> extractedData = extractPerformanceInfo(ocrResponse);
+
+        // 3. 결과 반환
+        return ResponseEntity.ok(extractedData);
     }
 
     private File convertMultipartFile(MultipartFile multipartFile) throws IOException {
