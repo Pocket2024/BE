@@ -159,6 +159,11 @@ public class ReviewController {
         ReviewTranslateDto translatedReview = gptService.translateReview(reviewTranslateDto);
         return ResponseEntity.ok(translatedReview);
     }
+    @GetMapping("/liked")
+    public ResponseEntity<List<ReviewDto>> getLikedReviews(@RequestParam Long userId){
+        List<ReviewDto> likedReviews = reviewService.getLikedReviewsByUserId(userId);
+        return ResponseEntity.ok(likedReviews);
+    }
 
 
 

@@ -458,4 +458,10 @@ public class ReviewService {
 
         return reviewsByDate;
     }
+    public List<ReviewDto> getLikedReviewsByUserId(Long userId){
+        List<Like> likedReviews = likeRepository.findByUserId(userId);
+        return likedReviews.stream().map(like -> getReviewDto(like.getReview().getId(), userId)).collect(Collectors.toList());
+    }
+
+
 }
