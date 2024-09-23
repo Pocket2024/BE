@@ -21,7 +21,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 @RestController
 @RequestMapping("/api/ocr")
 public class OcrController {
@@ -52,14 +51,8 @@ public class OcrController {
         return ResponseEntity.ok(Map.of("ocrText", ocrResponse));
     }
 
-    @PostMapping("/classify")
-    public ResponseEntity<Map<String, String>> classifyText(@RequestParam("ocrText") String ocrText) {
-        // GPT API 호출하여 공연 정보 추출
-        Map<String, String> extractedData = extractPerformanceInfo(ocrText);
-        return ResponseEntity.ok(extractedData);
-    }
-
     private File convertMultipartFile(MultipartFile multipartFile) throws IOException {
+        // 임시 파일을 생성
         File tempFile = File.createTempFile("temp-file", ".tmp");
         multipartFile.transferTo(tempFile);
         return tempFile;
@@ -71,34 +64,46 @@ public class OcrController {
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
         headers.set("X-OCR-SECRET", apiKey);
 
+        // 파일 및 메타데이터 추가
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("message", metadataJson);
         body.add("file", new FileSystemResource(file));
 
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-        ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(
+                apiUrl,
+                HttpMethod.POST,
+                requestEntity,
+                String.class
+        );
+
         return response.getBody();
     }
 
     private String createMetadata(MultipartFile file) {
+        // 파일의 형식과 이름 추출
         String fileName = file.getOriginalFilename();
         String fileFormat = fileName != null ? fileName.substring(fileName.lastIndexOf('.') + 1) : "Unknown";
 
-        String requestId = UUID.randomUUID().toString();
-        long timestamp = System.currentTimeMillis();
+        // 메타데이터 생성
+        String requestId = UUID.randomUUID().toString(); // UUID로 고유 요청 ID 생성
+        long timestamp = System.currentTimeMillis(); // 현재 시간(밀리초 단위)
 
+        // 메타데이터 JSON 구조 생성
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("version", "V2");
         metadata.put("requestId", requestId);
         metadata.put("timestamp", timestamp);
 
+        // 이미지 정보 추가
         Map<String, String> imageInfo = new HashMap<>();
         imageInfo.put("format", fileFormat);
         imageInfo.put("name", fileName);
 
-        metadata.put("images", Collections.singletonList(imageInfo));
+        metadata.put("images", Collections.singletonList(imageInfo)); // images 배열로 추가
 
+        // JSON 문자열로 변환
         ObjectMapper objectMapper = new ObjectMapper();
         String metadataJson;
         try {
@@ -110,10 +115,12 @@ public class OcrController {
         return metadataJson;
     }
 
+    // ChatGPT API를 호출하여 공연 정보 추출
     private Map<String, String> extractPerformanceInfo(String ocrText) {
         RestTemplate restTemplate = new RestTemplate();
         String gptApiUrl = "https://api.openai.com/v1/chat/completions";
 
+        // GPT API 요청 본문 생성
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", "gpt-3.5-turbo");
         requestBody.put("messages", List.of(
@@ -123,17 +130,28 @@ public class OcrController {
         requestBody.put("max_tokens", 100);
         requestBody.put("temperature", 0.5);
 
+
+        // 요청 헤더 설정
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(gptApiKey);
 
+        // 제네릭 타입을 제거한 HttpEntity 선언
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
-        ResponseEntity<Map> response = restTemplate.exchange(gptApiUrl, HttpMethod.POST, request, Map.class);
+        // ChatGPT API 호출
+        ResponseEntity<Map> response = restTemplate.exchange(
+                gptApiUrl,
+                HttpMethod.POST,
+                request,
+                Map.class
+        );
 
+        // 응답에서 공연 정보 추출 (예: content에 따라 parsing 필요)
         Map<String, Object> choices = (Map<String, Object>) ((List<Object>) response.getBody().get("choices")).get(0);
         String chatGptResponse = (String) ((Map<String, Object>) choices.get("message")).get("content");
 
+        // 공연 정보 추출 (간단한 파싱)
         Map<String, String> extractedData = new HashMap<>();
         extractedData.put("title", extractValue(chatGptResponse, "Ticket title"));
         extractedData.put("date", extractValue(chatGptResponse, "Date"));
@@ -152,4 +170,3 @@ public class OcrController {
         return "Not Found";
     }
 }
-
